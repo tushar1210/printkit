@@ -1,0 +1,8 @@
+.git
+.github
+bin
+dist
+*.printkit-tmp
+*.exe
+*.test
+coverage.out
