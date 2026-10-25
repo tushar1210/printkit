@@ -19,6 +19,7 @@ Headers and footers use Chromium's header classes (`pageNumber`, `totalPages`, `
 ## Requirements
 
 - Go 1.26 or newer. chromedp v0.21 and pdfcpu v0.16 declare that as their minimum. The module follows them instead of pinning older releases to claim Go 1.22.
+- The import path is `github.com/tushar-singh-dev/printkit`.
 - Google Chrome or Chromium on `PATH`, or `CHROME_PATH` / `WithChromePath`.
 - Integration tests also use `pdftotext` and `pdfinfo` from poppler.
 
@@ -180,3 +181,64 @@ GitHub Actions installs Chrome and poppler and runs format, vet, lint, and `go t
 - Interactive form fields, copies, and an XSLT table of contents are not implemented.
 - Header and footer HTML should set a font size. Chromium's default header text is tiny. The left/center/right fields use 9 pt unless `--header-font-size` says otherwise.
 - `LoadErrorSkip` drops one input of a multi-input PDF. If every input is skipped, the call returns `ErrNoInput`.
+
+## Performance vs wkhtmltopdf
+
+Measured on 25 October 2026. Full tables, the parity notes, and the rerun command are in [BENCHMARKS.md](BENCHMARKS.md).
+
+The machine was a KVM guest, Ubuntu 24.04.5, Linux 6.12.94+, 4 cores (Intel Xeon, 1 thread per core), 15.6 GiB RAM, no swap. printkit 0.1.0 on Go 1.26.0 drove Google Chrome 156.0.8078.47. wkhtmltopdf was 0.12.6.1 with patched Qt, the official jammy package `wkhtmltox_0.12.6.1-2.jammy_amd64.deb`. Ubuntu 24.04 has no official packaging build. Sixteen-wide runs were skipped. Eight-wide runs are oversubscribed on 4 cores.
+
+Both CLIs ran with backgrounds on and smart shrinking left at the CLI default (on). wkhtmltopdf was passed `--enable-local-file-access`. The report adds a table of contents and a header/footer of `[page]/[topage]` and `[doctitle]`. Everything was local. Each series discarded 2 warm-up runs, then recorded 20 runs, or 8 batches for throughput. Percentiles are nearest-rank. CPU is the greater of `wait4` rusage and the high-water mark of user+sys time across the live process tree, so Chrome's renderer, GPU, and zygote count. RSS sums `VmRSS` and counts shared mappings once per process. PSS splits those pages. Prefer PSS when comparing memory cost.
+
+Cold wall time is one process per document, which is what a shell script pays.
+
+| Fixture | Tool | Wall p50 | Wall p95 | CPU p50 | RSS p50 | PSS p50 | Size |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| tiny | wkhtmltopdf | 222 ms | 224 ms | 21 ms | 34 MiB | 29 MiB | 10 KiB |
+| tiny | htmlprint | 356 ms | 375 ms | 650 ms | 1.27 GiB | 392 MiB | 14 KiB |
+| report | wkhtmltopdf | 718 ms | 724 ms | 117 ms | 44 MiB | 39 MiB | 176 KiB |
+| report | htmlprint | 782 ms | 844 ms | 1.33 s | 1.43 GiB | 506 MiB | 235 KiB |
+| css | wkhtmltopdf | 292 ms | 295 ms | 98 ms | 42 MiB | 37 MiB | 61 KiB |
+| css | htmlprint | 404 ms | 432 ms | 820 ms | 1.37 GiB | 390 MiB | 123 KiB |
+| images | wkhtmltopdf | 983 ms | 993 ms | 782 ms | 82 MiB | 77 MiB | 3.8 MiB |
+| images | htmlprint | 462 ms | 493 ms | 950 ms | 1.37 GiB | 454 MiB | 3.8 MiB |
+| table | wkhtmltopdf | 1.48 s | 1.65 s | 1.28 s | 82 MiB | 77 MiB | 655 KiB |
+| table | htmlprint | 2.72 s | 2.84 s | 3.76 s | 1.99 GiB | 1.04 GiB | 8.4 MiB |
+
+A warm `Converter` (pool size 1, browser already up) against the same wkhtmltopdf cold numbers:
+
+| Fixture | Wall p50 | Wall p95 | CPU p50 | RSS p50 | PSS p50 | Size |
+| --- | --- | --- | --- | --- | --- | --- |
+| tiny | 91 ms | 105 ms | 280 ms | 1.39 GiB | 466 MiB | 14 KiB |
+| report | 508 ms | 541 ms | 940 ms | 1.53 GiB | 588 MiB | 235 KiB |
+| css | 142 ms | 151 ms | 420 ms | 1.47 GiB | 521 MiB | 123 KiB |
+| images | 171 ms | 184 ms | 470 ms | 1.52 GiB | 601 MiB | 3.8 MiB |
+| table | 2.37 s | 2.51 s | 3.52 s | 1.96 GiB | 1.13 GiB | 8.4 MiB |
+
+Documents per second. `htmlprint` is N cold processes. `printkit` is one `Converter` with pool size N.
+
+| Fixture | N | wkhtmltopdf | htmlprint | printkit |
+| --- | --- | --- | --- | --- |
+| tiny | 1 | 4.51 | 2.81 | 10.21 |
+| tiny | 4 | 17.78 | 3.86 | 12.04 |
+| tiny | 8 | 33.37 | 3.92 | 11.17 |
+| report | 1 | 1.39 | 1.28 | 2.05 |
+| report | 4 | 5.49 | 2.21 | 4.28 |
+| report | 8 | 9.77 | 2.31 | 4.17 |
+| css | 1 | 3.39 | 2.45 | 8.30 |
+| css | 4 | 12.88 | 3.58 | 9.83 |
+| css | 8 | 19.76 | 3.72 | 10.38 |
+| images | 1 | 1.03 | 2.12 | 5.91 |
+| images | 4 | 3.86 | 3.03 | 7.52 |
+| images | 8 | 4.18 | 3.21 | 7.42 |
+| table | 1 | 0.68 | 0.37 | 0.40 |
+| table | 4 | 2.51 | 0.82 | 0.97 |
+| table | 8 | 2.69 | 0.80 | 1.00 |
+
+wkhtmltopdf wins the cold CLI comparison on the tiny page, the report, the CSS page, and the table. It uses less CPU on every fixture, and far less memory: about 30–80 MiB PSS for one process, against 390 MiB to 1.0 GiB for one Chrome. It also wins throughput anywhere several processes run at once. Eight wkhtmltopdf processes still fit. Eight htmlprint processes on the table peaked at 6.5 GiB PSS.
+
+printkit wins after Chrome is already running, on every fixture except the table. Warm wall time is 91 ms, 508 ms, 142 ms, and 171 ms for tiny, report, css, and images. The photo log is faster even cold (462 ms vs 983 ms), and the warm pool stays ahead of wkhtmltopdf at 1, 4, and 8 workers (5.9, 7.5, and 7.4 docs/s vs 1.0, 3.9, and 4.2). Launching htmlprint once per document is the wrong way to scale it. The pool is the API to use.
+
+The CSS fixture is not a win for wkhtmltopdf. Both embed Liberation Sans and both contain the marker text. wkhtmltopdf stacks the header, does not paint the four-column grid or the flex row, and leaves the page background white. printkit paints the gradient, the flex header, and the grid. The photo log and the 5,000-row table both contain all of their content. wkhtmltopdf uses 6 pages for the photos and 75 for the table. printkit uses 4 and 52.
+
+Output size is close on the tiny page, the report, and the photos. The CSS page is 61 KiB vs 123 KiB. The table is 655 KiB vs 8.4 MiB. Chrome 156 writes a tagged structure tree, about 55,000 objects for this table. Turning `generateTaggedPDF` off in a one-off run cut that file to 413 KiB and the wall time to 1.66 s, and it also dropped the outline. Outlines stay on, so that switch was not shipped. Stripping the structure tree while keeping the outline is the cheap follow-up. It is not done here.

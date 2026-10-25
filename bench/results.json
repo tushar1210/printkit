@@ -1,0 +1,6242 @@
+{
+  "measuredAt": "2026-10-25T23:27:20.624349412Z",
+  "method": "Local fixtures only. Both CLIs run with backgrounds on and smart shrinking left at the CLI default (on). wkhtmltopdf is passed --enable-local-file-access. The report fixture adds a table of contents and a header/footer of [page]/[topage] and [doctitle], which both tools can paint with their native header path. Cold: one process per document. Warm: one printkit.Converter per fixture, pool size 1, timed around Converter.PDF after the browser is already up. Throughput: N processes, or one Converter with pool size N. CPU for a finished process is the greater of wait4 rusage and the high-water mark of user+sys ticks summed over the live process tree. rusage alone misses Chromium children that are not reaped into the parent. The live sum alone misses a few ticks that land in the parent as it exits, which is the whole cost of a short wkhtmltopdf run. Warm CPU is a delta of the live sum on the harness and includes a light RSS sampler. RSS sums VmRSS every 15ms and counts shared pages once per process. PSS sums smaps_rollup about every 120ms. Percentiles are nearest-rank, rank = ceil(p*n)-1.",
+  "host": {
+    "os": "linux",
+    "arch": "amd64",
+    "uname": "Linux 6.12.94+ x86_64",
+    "cpuModel": "Intel(R) Xeon(R) Processor",
+    "cpus": 4,
+    "memTotalBytes": 16780574720,
+    "memAvailableBytes": 12877066240,
+    "go": "go1.26.0",
+    "printkit": "0.1.0",
+    "chromePath": "/usr/bin/google-chrome-stable",
+    "chromeVersion": "Google Chrome 156.0.8078.47",
+    "wkhtmlPath": "/usr/local/bin/wkhtmltopdf",
+    "wkhtmlVersion": "wkhtmltopdf 0.12.6.1 (with patched qt)",
+    "wkhtmlBuild": "wkhtmltox 1:0.12.6.1-2.jammy amd64 from https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-2/wkhtmltox_0.12.6.1-2.jammy_amd64.deb (patched Qt). Ubuntu 24.04 has no official packaging build; jammy is the closest and the package links against libssl.so.3.",
+    "htmlprint": "/workspace/bin/htmlprint"
+  },
+  "flags": {
+    "runs": 20,
+    "warmup": 2,
+    "batches": 8,
+    "parallel": [
+      1,
+      4,
+      8
+    ],
+    "timeout": "3m0s"
+  },
+  "parity": [
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "tiny",
+      "pdf": "/workspace/bench/out/parity-wkhtmltopdf-tiny.pdf",
+      "pages": 1,
+      "pageSize": "595 x 842 pts (A4)",
+      "fonts": [
+        "Tinos-Bold",
+        "Tinos"
+      ],
+      "textHead": "Tiny marker TINYMARK. One short paragraph for a single page."
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "tiny",
+      "pdf": "/workspace/bench/out/parity-htmlprint-tiny.pdf",
+      "pages": 1,
+      "pageSize": "595.92 x 841.92 pts (A4)",
+      "fonts": [
+        "AAAAAA+Tinos-Bold",
+        "BAAAAA+Tinos"
+      ],
+      "textHead": "Tiny marker TINYMARK. One short paragraph for a single page."
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "report",
+      "pdf": "/workspace/bench/out/parity-wkhtmltopdf-report.pdf",
+      "pages": 49,
+      "pageSize": "595 x 842 pts (A4)",
+      "fonts": [
+        "Arimo",
+        "Arimo-Bold",
+        "LiberationSans-Bold",
+        "LiberationSans"
+      ],
+      "textHead": "1/49 Table of Contents Table of Contents 1 Chapter 01. Receiving 2 Chapter 02. Putaway 3 Chapter 03. Cycle counts 4 Chapter 04. Cold storage 5 Chapter 05. Outbound 6 Chapter 06. Returns 7 Chapter 07. Packaging 8 Chapter 08. Labels 9 Chapter 09. Staffing 10 Chapter 10. Safety 11 Chapter 11. Carriers 12 Chapter 12. Damage 13 Chapter 13. Inventory 14 Chapter 14. Slots 15 Chapter 15. Audits 16 Chapter"
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "report",
+      "pdf": "/workspace/bench/out/parity-htmlprint-report.pdf",
+      "pages": 49,
+      "pageSize": "595.92 x 841.92 pts (A4)",
+      "fonts": [
+        "AAAAAA+LiberationSans-Bold",
+        "BAAAAA+LiberationSans",
+        "CAAAAA+NotoSans-Regular",
+        "DAAAAA+Arimo-Bold",
+        "EAAAAA+Arimo"
+      ],
+      "textHead": "1/49 Table of Contents Chapter 01. Receiving 2 Chapter 02. Putaway 3 Chapter 03. Cycle counts 4 Chapter 04. Cold storage 5 Chapter 05. Outbound 6 Chapter 06. Returns 7 Chapter 07. Packaging 8 Chapter 08. Labels 9 Chapter 09. Staffing 10 Chapter 10. Safety 11 Chapter 11. Carriers 12 Chapter 12. Damage 13 Chapter 13. Inventory 14 Chapter 14. Slots 15 Chapter 15. Audits 16 Chapter 16. Receiving 17 Ch"
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "css",
+      "pdf": "/workspace/bench/out/parity-wkhtmltopdf-css.pdf",
+      "pages": 1,
+      "pageSize": "595 x 842 pts (A4)",
+      "fonts": [
+        "LiberationSans-Bold",
+        "LiberationSans"
+      ],
+      "images": 16,
+      "textHead": "CSSMARK floor status FONTMARK Bench Sans · local file, no network Open orders 128 FLEXMARK pick pack Short picks 7 Dock doors 14 On time 96% GRIDMARK aisle heat Four-column grid, rounded cards, a flex row of pills, a gradient page background, and a downloaded-from-disk face. Trailers 5 Idle staff 3 Notes Modern layout is the point of this fixture. A browser from 2015 will not paint the grid or th"
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "css",
+      "pdf": "/workspace/bench/out/parity-htmlprint-css.pdf",
+      "pages": 1,
+      "pageSize": "595.92 x 841.92 pts (A4)",
+      "fonts": [
+        "AAAAAA+LiberationSans",
+        "AAAAAA+LiberationSans"
+      ],
+      "images": 8,
+      "textHead": "CSSMARK floor status FONTMARK Bench Sans · local file, no network Open orders Short picks Dock doors On time 128 7 14 96% FLEXMARK pick pack GRIDMARK aisle heat Trailers Idle staff Four-column grid, rounded cards, a flex row of pills, a gradient page background, and a downloaded-from-disk face. 5 3 Notes Modern layout is the point of this fixture. A browser from 2015 will not paint the grid or th"
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "images",
+      "pdf": "/workspace/bench/out/parity-wkhtmltopdf-images.pdf",
+      "pages": 6,
+      "pageSize": "595 x 842 pts (A4)",
+      "fonts": [
+        "LiberationSans-Bold",
+        "LiberationSans"
+      ],
+      "images": 12,
+      "textHead": "IMAGEMARK photo log Photo 01 of the dock, shot locally. Photo 02 of the dock, shot locally. Photo 03 of the dock, shot locally. Photo 04 of the dock, shot locally. Photo 05 of the dock, shot locally. Photo 06 of the dock, shot locally. Photo 07 of the dock, shot locally. Photo 08 of the dock, shot locally. Photo 09 of the dock, shot locally. Photo 10 of the dock, shot locally. Photo 11 of the dock"
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "images",
+      "pdf": "/workspace/bench/out/parity-htmlprint-images.pdf",
+      "pages": 4,
+      "pageSize": "595.92 x 841.92 pts (A4)",
+      "fonts": [
+        "AAAAAA+Arimo-Bold",
+        "BAAAAA+Arimo"
+      ],
+      "images": 12,
+      "textHead": "IMAGEMARK photo log Photo 01 of the dock, shot locally. Photo 02 of the dock, shot locally. Photo 03 of the dock, shot locally. Photo 04 of the dock, shot locally. Photo 05 of the dock, shot locally. Photo 06 of the dock, shot locally. Photo 07 of the dock, shot locally. Photo 08 of the dock, shot locally. Photo 09 of the dock, shot locally. Photo 10 of the dock, shot locally. Photo 11 of the dock"
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "table",
+      "pdf": "/workspace/bench/out/parity-wkhtmltopdf-table.pdf",
+      "pages": 75,
+      "pageSize": "595 x 842 pts (A4)",
+      "fonts": [
+        "LiberationSans-Bold",
+        "LiberationSans"
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "table",
+      "pdf": "/workspace/bench/out/parity-htmlprint-table.pdf",
+      "pages": 52,
+      "pageSize": "595.92 x 841.92 pts (A4)",
+      "fonts": [
+        "AAAAAA+Arimo-Bold",
+        "BAAAAA+Arimo"
+      ]
+    }
+  ],
+  "cold": [
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "tiny",
+      "n": 20,
+      "wallP50Ms": 221.820644,
+      "wallP95Ms": 223.981743,
+      "cpuP50Ms": 21.343,
+      "cpuP95Ms": 23.306,
+      "rssP50Bytes": 35250176,
+      "rssP95Bytes": 35774464,
+      "pssP50Bytes": 30734336,
+      "pssP95Bytes": 31259648,
+      "sizeP50Bytes": 9839,
+      "samples": [
+        {
+          "wallNs": 223684187,
+          "cpuNs": 23188000,
+          "rssBytes": 35069952,
+          "pssBytes": 30570496,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 222405905,
+          "cpuNs": 21832000,
+          "rssBytes": 35250176,
+          "pssBytes": 30734336,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 223376490,
+          "cpuNs": 22655000,
+          "rssBytes": 35774464,
+          "pssBytes": 31259648,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 222889428,
+          "cpuNs": 22269000,
+          "rssBytes": 34992128,
+          "pssBytes": 30483456,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 223007469,
+          "cpuNs": 22599000,
+          "rssBytes": 35663872,
+          "pssBytes": 31193088,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 221329252,
+          "cpuNs": 21043000,
+          "rssBytes": 35422208,
+          "pssBytes": 30923776,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 221536533,
+          "cpuNs": 21343000,
+          "rssBytes": 35217408,
+          "pssBytes": 30683136,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 222001705,
+          "cpuNs": 21477000,
+          "rssBytes": 35098624,
+          "pssBytes": 30587904,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 221776633,
+          "cpuNs": 21160000,
+          "rssBytes": 35057664,
+          "pssBytes": 30512128,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 221482179,
+          "cpuNs": 21066000,
+          "rssBytes": 35262464,
+          "pssBytes": 30735360,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 221709456,
+          "cpuNs": 20873000,
+          "rssBytes": 35684352,
+          "pssBytes": 31131648,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 220998041,
+          "cpuNs": 20757000,
+          "rssBytes": 35684352,
+          "pssBytes": 31138816,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 220900382,
+          "cpuNs": 20446000,
+          "rssBytes": 34865152,
+          "pssBytes": 30348288,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 221316975,
+          "cpuNs": 20790000,
+          "rssBytes": 35115008,
+          "pssBytes": 30587904,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 223981743,
+          "cpuNs": 23306000,
+          "rssBytes": 35004416,
+          "pssBytes": 30462976,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 224849445,
+          "cpuNs": 24312000,
+          "rssBytes": 35504128,
+          "pssBytes": 30907392,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 221820644,
+          "cpuNs": 21306000,
+          "rssBytes": 34967552,
+          "pssBytes": 30414848,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 221153232,
+          "cpuNs": 20811000,
+          "rssBytes": 35848192,
+          "pssBytes": 31295488,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 222461021,
+          "cpuNs": 21979000,
+          "rssBytes": 35282944,
+          "pssBytes": 30741504,
+          "sizeBytes": 9839
+        },
+        {
+          "wallNs": 221855449,
+          "cpuNs": 21418000,
+          "rssBytes": 35282944,
+          "pssBytes": 30747648,
+          "sizeBytes": 9839
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "tiny",
+      "n": 20,
+      "wallP50Ms": 355.839141,
+      "wallP95Ms": 374.696001,
+      "cpuP50Ms": 650,
+      "cpuP95Ms": 710,
+      "rssP50Bytes": 1364267008,
+      "rssP95Bytes": 1425264640,
+      "pssP50Bytes": 411452416,
+      "pssP95Bytes": 418274304,
+      "sizeP50Bytes": 14546,
+      "samples": [
+        {
+          "wallNs": 355722630,
+          "cpuNs": 700000000,
+          "rssBytes": 1357516800,
+          "pssBytes": 414089216,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 336278708,
+          "cpuNs": 660000000,
+          "rssBytes": 1360957440,
+          "pssBytes": 409586688,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 348692796,
+          "cpuNs": 660000000,
+          "rssBytes": 1431592960,
+          "pssBytes": 413527040,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 360491388,
+          "cpuNs": 630000000,
+          "rssBytes": 1356173312,
+          "pssBytes": 411020288,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 345109017,
+          "cpuNs": 610000000,
+          "rssBytes": 1357893632,
+          "pssBytes": 408669184,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 369545169,
+          "cpuNs": 640000000,
+          "rssBytes": 1397116928,
+          "pssBytes": 406824960,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 368741628,
+          "cpuNs": 660000000,
+          "rssBytes": 1407475712,
+          "pssBytes": 417321984,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 370057512,
+          "cpuNs": 700000000,
+          "rssBytes": 1425264640,
+          "pssBytes": 409239552,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 355839141,
+          "cpuNs": 590000000,
+          "rssBytes": 1382219776,
+          "pssBytes": 412172288,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 342272323,
+          "cpuNs": 630000000,
+          "rssBytes": 1354108928,
+          "pssBytes": 411087872,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 366334055,
+          "cpuNs": 710000000,
+          "rssBytes": 1390534656,
+          "pssBytes": 410584064,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 358662729,
+          "cpuNs": 580000000,
+          "rssBytes": 1365700608,
+          "pssBytes": 413828096,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 337393730,
+          "cpuNs": 630000000,
+          "rssBytes": 1397927936,
+          "pssBytes": 418274304,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 315055296,
+          "cpuNs": 560000000,
+          "rssBytes": 1349001216,
+          "pssBytes": 418636800,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 355957288,
+          "cpuNs": 650000000,
+          "rssBytes": 1358393344,
+          "pssBytes": 412919808,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 374696001,
+          "cpuNs": 670000000,
+          "rssBytes": 1372319744,
+          "pssBytes": 411117568,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 340704323,
+          "cpuNs": 650000000,
+          "rssBytes": 1398841344,
+          "pssBytes": 413515776,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 332602511,
+          "cpuNs": 610000000,
+          "rssBytes": 1355960320,
+          "pssBytes": 416824320,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 360454200,
+          "cpuNs": 660000000,
+          "rssBytes": 1364267008,
+          "pssBytes": 411023360,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 383554446,
+          "cpuNs": 720000000,
+          "rssBytes": 1360293888,
+          "pssBytes": 411452416,
+          "sizeBytes": 14546
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "report",
+      "n": 20,
+      "wallP50Ms": 717.542326,
+      "wallP95Ms": 724.46476,
+      "cpuP50Ms": 116.698,
+      "cpuP95Ms": 123.104,
+      "rssP50Bytes": 46587904,
+      "rssP95Bytes": 47058944,
+      "pssP50Bytes": 40820736,
+      "pssP95Bytes": 41595904,
+      "sizeP50Bytes": 180121,
+      "samples": [
+        {
+          "wallNs": 714844035,
+          "cpuNs": 113929000,
+          "rssBytes": 46854144,
+          "pssBytes": 40876032,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 718586409,
+          "cpuNs": 117875000,
+          "rssBytes": 46551040,
+          "pssBytes": 40654848,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 715770860,
+          "cpuNs": 114524000,
+          "rssBytes": 46907392,
+          "pssBytes": 40919040,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 717473357,
+          "cpuNs": 116005000,
+          "rssBytes": 46485504,
+          "pssBytes": 40476672,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 717941749,
+          "cpuNs": 116912000,
+          "rssBytes": 46571520,
+          "pssBytes": 40783872,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 718059685,
+          "cpuNs": 117030000,
+          "rssBytes": 46526464,
+          "pssBytes": 40697856,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 714911479,
+          "cpuNs": 113915000,
+          "rssBytes": 47194112,
+          "pssBytes": 41114624,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 716037097,
+          "cpuNs": 115186000,
+          "rssBytes": 46587904,
+          "pssBytes": 40587264,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 719754916,
+          "cpuNs": 118848000,
+          "rssBytes": 46690304,
+          "pssBytes": 41219072,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 717542326,
+          "cpuNs": 116698000,
+          "rssBytes": 47058944,
+          "pssBytes": 40943616,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 718063635,
+          "cpuNs": 117229000,
+          "rssBytes": 46546944,
+          "pssBytes": 40707072,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 715624960,
+          "cpuNs": 114932000,
+          "rssBytes": 46665728,
+          "pssBytes": 40759296,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 717060071,
+          "cpuNs": 116254000,
+          "rssBytes": 46759936,
+          "pssBytes": 40820736,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 716351135,
+          "cpuNs": 115240000,
+          "rssBytes": 46854144,
+          "pssBytes": 40892416,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 718002001,
+          "cpuNs": 117075000,
+          "rssBytes": 46530560,
+          "pssBytes": 40720384,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 717242928,
+          "cpuNs": 116112000,
+          "rssBytes": 46989312,
+          "pssBytes": 41155584,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 719617740,
+          "cpuNs": 118534000,
+          "rssBytes": 46153728,
+          "pssBytes": 40665088,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 721070909,
+          "cpuNs": 120193000,
+          "rssBytes": 46587904,
+          "pssBytes": 40838144,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 726500000,
+          "cpuNs": 125736000,
+          "rssBytes": 46690304,
+          "pssBytes": 42005504,
+          "sizeBytes": 180121
+        },
+        {
+          "wallNs": 724464760,
+          "cpuNs": 123104000,
+          "rssBytes": 46415872,
+          "pssBytes": 41595904,
+          "sizeBytes": 180121
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "report",
+      "n": 20,
+      "wallP50Ms": 782.025307,
+      "wallP95Ms": 843.743591,
+      "cpuP50Ms": 1330,
+      "cpuP95Ms": 1450,
+      "rssP50Bytes": 1539584000,
+      "rssP95Bytes": 1545076736,
+      "pssP50Bytes": 530611200,
+      "pssP95Bytes": 534362112,
+      "sizeP50Bytes": 240633,
+      "samples": [
+        {
+          "wallNs": 843743591,
+          "cpuNs": 1450000000,
+          "rssBytes": 1542270976,
+          "pssBytes": 517332992,
+          "sizeBytes": 240548
+        },
+        {
+          "wallNs": 841929039,
+          "cpuNs": 1400000000,
+          "rssBytes": 1539346432,
+          "pssBytes": 524709888,
+          "sizeBytes": 240632
+        },
+        {
+          "wallNs": 782025307,
+          "cpuNs": 1370000000,
+          "rssBytes": 1540026368,
+          "pssBytes": 517828608,
+          "sizeBytes": 240631
+        },
+        {
+          "wallNs": 894308476,
+          "cpuNs": 1550000000,
+          "rssBytes": 1543180288,
+          "pssBytes": 517105664,
+          "sizeBytes": 240637
+        },
+        {
+          "wallNs": 790999495,
+          "cpuNs": 1320000000,
+          "rssBytes": 1537474560,
+          "pssBytes": 517751808,
+          "sizeBytes": 240630
+        },
+        {
+          "wallNs": 769101978,
+          "cpuNs": 1330000000,
+          "rssBytes": 1536225280,
+          "pssBytes": 530800640,
+          "sizeBytes": 240552
+        },
+        {
+          "wallNs": 783890504,
+          "cpuNs": 1350000000,
+          "rssBytes": 1541201920,
+          "pssBytes": 534317056,
+          "sizeBytes": 240634
+        },
+        {
+          "wallNs": 804957311,
+          "cpuNs": 1320000000,
+          "rssBytes": 1540050944,
+          "pssBytes": 523777024,
+          "sizeBytes": 240633
+        },
+        {
+          "wallNs": 793849285,
+          "cpuNs": 1370000000,
+          "rssBytes": 1541873664,
+          "pssBytes": 518780928,
+          "sizeBytes": 240635
+        },
+        {
+          "wallNs": 810305417,
+          "cpuNs": 1410000000,
+          "rssBytes": 1538252800,
+          "pssBytes": 515684352,
+          "sizeBytes": 240639
+        },
+        {
+          "wallNs": 771985854,
+          "cpuNs": 1360000000,
+          "rssBytes": 1539584000,
+          "pssBytes": 531618816,
+          "sizeBytes": 240633
+        },
+        {
+          "wallNs": 778055242,
+          "cpuNs": 1350000000,
+          "rssBytes": 1548505088,
+          "pssBytes": 534362112,
+          "sizeBytes": 240620
+        },
+        {
+          "wallNs": 802211756,
+          "cpuNs": 1330000000,
+          "rssBytes": 1538998272,
+          "pssBytes": 533799936,
+          "sizeBytes": 240638
+        },
+        {
+          "wallNs": 767265507,
+          "cpuNs": 1310000000,
+          "rssBytes": 1540206592,
+          "pssBytes": 530853888,
+          "sizeBytes": 240636
+        },
+        {
+          "wallNs": 768480523,
+          "cpuNs": 1310000000,
+          "rssBytes": 1530699776,
+          "pssBytes": 526699520,
+          "sizeBytes": 240549
+        },
+        {
+          "wallNs": 782872147,
+          "cpuNs": 1310000000,
+          "rssBytes": 1536933888,
+          "pssBytes": 531562496,
+          "sizeBytes": 240634
+        },
+        {
+          "wallNs": 772776683,
+          "cpuNs": 1310000000,
+          "rssBytes": 1541545984,
+          "pssBytes": 534476800,
+          "sizeBytes": 240640
+        },
+        {
+          "wallNs": 756282156,
+          "cpuNs": 1330000000,
+          "rssBytes": 1534148608,
+          "pssBytes": 530611200,
+          "sizeBytes": 240632
+        },
+        {
+          "wallNs": 762591789,
+          "cpuNs": 1300000000,
+          "rssBytes": 1536442368,
+          "pssBytes": 532319232,
+          "sizeBytes": 240646
+        },
+        {
+          "wallNs": 759273458,
+          "cpuNs": 1260000000,
+          "rssBytes": 1545076736,
+          "pssBytes": 532702208,
+          "sizeBytes": 240634
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "css",
+      "n": 20,
+      "wallP50Ms": 291.854288,
+      "wallP95Ms": 294.559085,
+      "cpuP50Ms": 97.639,
+      "cpuP95Ms": 100.064,
+      "rssP50Bytes": 44318720,
+      "rssP95Bytes": 44662784,
+      "pssP50Bytes": 39150592,
+      "pssP95Bytes": 39649280,
+      "sizeP50Bytes": 62386,
+      "samples": [
+        {
+          "wallNs": 289557220,
+          "cpuNs": 94937000,
+          "rssBytes": 44367872,
+          "pssBytes": 39442432,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 291032846,
+          "cpuNs": 96347000,
+          "rssBytes": 44044288,
+          "pssBytes": 39121920,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 291854288,
+          "cpuNs": 97639000,
+          "rssBytes": 44605440,
+          "pssBytes": 39453696,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 290647114,
+          "cpuNs": 96522000,
+          "rssBytes": 44351488,
+          "pssBytes": 39374848,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 292296038,
+          "cpuNs": 97730000,
+          "rssBytes": 44232704,
+          "pssBytes": 39150592,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 297369951,
+          "cpuNs": 103143000,
+          "rssBytes": 44347392,
+          "pssBytes": 38166528,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 291457455,
+          "cpuNs": 96833000,
+          "rssBytes": 44093440,
+          "pssBytes": 39154688,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 290487711,
+          "cpuNs": 96170000,
+          "rssBytes": 44892160,
+          "pssBytes": 39949312,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 293170000,
+          "cpuNs": 98534000,
+          "rssBytes": 44097536,
+          "pssBytes": 38510592,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 294123059,
+          "cpuNs": 99561000,
+          "rssBytes": 44199936,
+          "pssBytes": 39030784,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 292848098,
+          "cpuNs": 98808000,
+          "rssBytes": 44195840,
+          "pssBytes": 39021568,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 294406513,
+          "cpuNs": 99942000,
+          "rssBytes": 43761664,
+          "pssBytes": 38450176,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 290436202,
+          "cpuNs": 95767000,
+          "rssBytes": 44388352,
+          "pssBytes": 39415808,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 291622324,
+          "cpuNs": 97060000,
+          "rssBytes": 44449792,
+          "pssBytes": 39498752,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 292984441,
+          "cpuNs": 98853000,
+          "rssBytes": 44163072,
+          "pssBytes": 38998016,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 292647107,
+          "cpuNs": 98372000,
+          "rssBytes": 44318720,
+          "pssBytes": 39217152,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 294284949,
+          "cpuNs": 99573000,
+          "rssBytes": 43937792,
+          "pssBytes": 38816768,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 294559085,
+          "cpuNs": 100064000,
+          "rssBytes": 44662784,
+          "pssBytes": 38872064,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 291639866,
+          "cpuNs": 97534000,
+          "rssBytes": 44519424,
+          "pssBytes": 39592960,
+          "sizeBytes": 62386
+        },
+        {
+          "wallNs": 291822846,
+          "cpuNs": 97425000,
+          "rssBytes": 44597248,
+          "pssBytes": 39649280,
+          "sizeBytes": 62386
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "css",
+      "n": 20,
+      "wallP50Ms": 403.79799,
+      "wallP95Ms": 431.560182,
+      "cpuP50Ms": 820,
+      "cpuP95Ms": 860,
+      "rssP50Bytes": 1471471616,
+      "rssP95Bytes": 1487028224,
+      "pssP50Bytes": 408793088,
+      "pssP95Bytes": 419615744,
+      "sizeP50Bytes": 125490,
+      "samples": [
+        {
+          "wallNs": 404027343,
+          "cpuNs": 810000000,
+          "rssBytes": 1466294272,
+          "pssBytes": 412318720,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 410615089,
+          "cpuNs": 780000000,
+          "rssBytes": 1463795712,
+          "pssBytes": 416263168,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 403797990,
+          "cpuNs": 760000000,
+          "rssBytes": 1483661312,
+          "pssBytes": 408543232,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 402360016,
+          "cpuNs": 830000000,
+          "rssBytes": 1469546496,
+          "pssBytes": 414376960,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 408026875,
+          "cpuNs": 830000000,
+          "rssBytes": 1468600320,
+          "pssBytes": 409426944,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 429956856,
+          "cpuNs": 820000000,
+          "rssBytes": 1460768768,
+          "pssBytes": 399030272,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 400172542,
+          "cpuNs": 820000000,
+          "rssBytes": 1488478208,
+          "pssBytes": 414121984,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 390938174,
+          "cpuNs": 800000000,
+          "rssBytes": 1481789440,
+          "pssBytes": 406782976,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 482118237,
+          "cpuNs": 1010000000,
+          "rssBytes": 1478455296,
+          "pssBytes": 456060928,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 409211702,
+          "cpuNs": 840000000,
+          "rssBytes": 1459859456,
+          "pssBytes": 390537216,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 395119037,
+          "cpuNs": 790000000,
+          "rssBytes": 1454522368,
+          "pssBytes": 393426944,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 400692545,
+          "cpuNs": 730000000,
+          "rssBytes": 1456500736,
+          "pssBytes": 410498048,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 404060022,
+          "cpuNs": 830000000,
+          "rssBytes": 1471471616,
+          "pssBytes": 410588160,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 395643023,
+          "cpuNs": 770000000,
+          "rssBytes": 1475260416,
+          "pssBytes": 400346112,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 390274330,
+          "cpuNs": 790000000,
+          "rssBytes": 1477369856,
+          "pssBytes": 408793088,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 412734898,
+          "cpuNs": 840000000,
+          "rssBytes": 1483497472,
+          "pssBytes": 405522432,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 406040956,
+          "cpuNs": 800000000,
+          "rssBytes": 1473785856,
+          "pssBytes": 406162432,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 393703079,
+          "cpuNs": 840000000,
+          "rssBytes": 1478266880,
+          "pssBytes": 412265472,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 389651176,
+          "cpuNs": 830000000,
+          "rssBytes": 1487028224,
+          "pssBytes": 419615744,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 431560182,
+          "cpuNs": 860000000,
+          "rssBytes": 1465278464,
+          "pssBytes": 401708032,
+          "sizeBytes": 125490
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "images",
+      "n": 20,
+      "wallP50Ms": 982.850143,
+      "wallP95Ms": 992.986011,
+      "cpuP50Ms": 782.198,
+      "cpuP95Ms": 792.312,
+      "rssP50Bytes": 85491712,
+      "rssP95Bytes": 86183936,
+      "pssP50Bytes": 80437248,
+      "pssP95Bytes": 80957440,
+      "sizeP50Bytes": 3948007,
+      "samples": [
+        {
+          "wallNs": 981646590,
+          "cpuNs": 781194000,
+          "rssBytes": 85262336,
+          "pssBytes": 80410624,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 992986011,
+          "cpuNs": 792312000,
+          "rssBytes": 85336064,
+          "pssBytes": 79917056,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 987910867,
+          "cpuNs": 787215000,
+          "rssBytes": 85352448,
+          "pssBytes": 79962112,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 990843882,
+          "cpuNs": 790257000,
+          "rssBytes": 85491712,
+          "pssBytes": 80061440,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 1007474302,
+          "cpuNs": 806888000,
+          "rssBytes": 85655552,
+          "pssBytes": 79691776,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 981316715,
+          "cpuNs": 780296000,
+          "rssBytes": 85463040,
+          "pssBytes": 80599040,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 980301949,
+          "cpuNs": 779998000,
+          "rssBytes": 85258240,
+          "pssBytes": 80437248,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 982850143,
+          "cpuNs": 782361000,
+          "rssBytes": 85286912,
+          "pssBytes": 80436224,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 980166672,
+          "cpuNs": 778805000,
+          "rssBytes": 85057536,
+          "pssBytes": 80192512,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 987123971,
+          "cpuNs": 786594000,
+          "rssBytes": 85880832,
+          "pssBytes": 80500736,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 982695396,
+          "cpuNs": 782085000,
+          "rssBytes": 85430272,
+          "pssBytes": 80598016,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 978268612,
+          "cpuNs": 777867000,
+          "rssBytes": 86011904,
+          "pssBytes": 81155072,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 980039214,
+          "cpuNs": 779250000,
+          "rssBytes": 85540864,
+          "pssBytes": 80704512,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 987598248,
+          "cpuNs": 786367000,
+          "rssBytes": 85307392,
+          "pssBytes": 79951872,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 988771655,
+          "cpuNs": 787928000,
+          "rssBytes": 86208512,
+          "pssBytes": 80839680,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 979640510,
+          "cpuNs": 778081000,
+          "rssBytes": 85667840,
+          "pssBytes": 80806912,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 983404637,
+          "cpuNs": 782198000,
+          "rssBytes": 85491712,
+          "pssBytes": 80658432,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 985747820,
+          "cpuNs": 784630000,
+          "rssBytes": 86183936,
+          "pssBytes": 80859136,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 989986298,
+          "cpuNs": 789571000,
+          "rssBytes": 85733376,
+          "pssBytes": 80291840,
+          "sizeBytes": 3948007
+        },
+        {
+          "wallNs": 975615620,
+          "cpuNs": 775387000,
+          "rssBytes": 85778432,
+          "pssBytes": 80957440,
+          "sizeBytes": 3948007
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "images",
+      "n": 20,
+      "wallP50Ms": 462.311131,
+      "wallP95Ms": 492.828669,
+      "cpuP50Ms": 950,
+      "cpuP95Ms": 1000,
+      "rssP50Bytes": 1471139840,
+      "rssP95Bytes": 1491595264,
+      "pssP50Bytes": 476257280,
+      "pssP95Bytes": 496660480,
+      "sizeP50Bytes": 3954215,
+      "samples": [
+        {
+          "wallNs": 492828669,
+          "cpuNs": 950000000,
+          "rssBytes": 1484472320,
+          "pssBytes": 496660480,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 459029194,
+          "cpuNs": 930000000,
+          "rssBytes": 1487351808,
+          "pssBytes": 485407744,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 462349142,
+          "cpuNs": 950000000,
+          "rssBytes": 1460621312,
+          "pssBytes": 483062784,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 462196102,
+          "cpuNs": 990000000,
+          "rssBytes": 1456881664,
+          "pssBytes": 486737920,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 451952064,
+          "cpuNs": 970000000,
+          "rssBytes": 1486065664,
+          "pssBytes": 496158720,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 449519661,
+          "cpuNs": 930000000,
+          "rssBytes": 1459007488,
+          "pssBytes": 463330304,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 460158634,
+          "cpuNs": 950000000,
+          "rssBytes": 1462259712,
+          "pssBytes": 488115200,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 471106418,
+          "cpuNs": 960000000,
+          "rssBytes": 1494245376,
+          "pssBytes": 473616384,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 466153910,
+          "cpuNs": 920000000,
+          "rssBytes": 1467432960,
+          "pssBytes": 452739072,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 498794011,
+          "cpuNs": 990000000,
+          "rssBytes": 1491349504,
+          "pssBytes": 472451072,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 470897563,
+          "cpuNs": 950000000,
+          "rssBytes": 1484177408,
+          "pssBytes": 492129280,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 491113062,
+          "cpuNs": 980000000,
+          "rssBytes": 1471442944,
+          "pssBytes": 475190272,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 448659196,
+          "cpuNs": 950000000,
+          "rssBytes": 1471139840,
+          "pssBytes": 469896192,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 446879110,
+          "cpuNs": 960000000,
+          "rssBytes": 1485963264,
+          "pssBytes": 467810304,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 446519800,
+          "cpuNs": 930000000,
+          "rssBytes": 1468731392,
+          "pssBytes": 478162944,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 460744017,
+          "cpuNs": 1000000000,
+          "rssBytes": 1466232832,
+          "pssBytes": 504776704,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 469746528,
+          "cpuNs": 1020000000,
+          "rssBytes": 1478045696,
+          "pssBytes": 476257280,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 462311131,
+          "cpuNs": 950000000,
+          "rssBytes": 1467645952,
+          "pssBytes": 475545600,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 475620168,
+          "cpuNs": 970000000,
+          "rssBytes": 1454702592,
+          "pssBytes": 472581120,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 488364497,
+          "cpuNs": 990000000,
+          "rssBytes": 1491595264,
+          "pssBytes": 485136384,
+          "sizeBytes": 3954215
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "table",
+      "n": 20,
+      "wallP50Ms": 1482.62445,
+      "wallP95Ms": 1650.837206,
+      "cpuP50Ms": 1281.964,
+      "cpuP95Ms": 1444.936,
+      "rssP50Bytes": 85733376,
+      "rssP95Bytes": 85987328,
+      "pssP50Bytes": 80923648,
+      "pssP95Bytes": 81264640,
+      "sizeP50Bytes": 670285,
+      "samples": [
+        {
+          "wallNs": 1570679232,
+          "cpuNs": 1369668000,
+          "rssBytes": 85987328,
+          "pssBytes": 81264640,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 2113366826,
+          "cpuNs": 1900525000,
+          "rssBytes": 85692416,
+          "pssBytes": 81078272,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1650837206,
+          "cpuNs": 1444936000,
+          "rssBytes": 85737472,
+          "pssBytes": 81060864,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1530937844,
+          "cpuNs": 1318521000,
+          "rssBytes": 85897216,
+          "pssBytes": 80923648,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1517431620,
+          "cpuNs": 1316363000,
+          "rssBytes": 85606400,
+          "pssBytes": 80614400,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1523071292,
+          "cpuNs": 1317139000,
+          "rssBytes": 85848064,
+          "pssBytes": 81185792,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1498859172,
+          "cpuNs": 1292271000,
+          "rssBytes": 85307392,
+          "pssBytes": 80405504,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1525187356,
+          "cpuNs": 1324480000,
+          "rssBytes": 85659648,
+          "pssBytes": 80694272,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1483920318,
+          "cpuNs": 1283241000,
+          "rssBytes": 85807104,
+          "pssBytes": 80850944,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1475599365,
+          "cpuNs": 1275292000,
+          "rssBytes": 85803008,
+          "pssBytes": 80836608,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1482319860,
+          "cpuNs": 1281135000,
+          "rssBytes": 85790720,
+          "pssBytes": 81064960,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1475142875,
+          "cpuNs": 1274581000,
+          "rssBytes": 85671936,
+          "pssBytes": 80632832,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1478931281,
+          "cpuNs": 1277904000,
+          "rssBytes": 86482944,
+          "pssBytes": 81767424,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1531507660,
+          "cpuNs": 1330005000,
+          "rssBytes": 85843968,
+          "pssBytes": 81176576,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1478798569,
+          "cpuNs": 1278239000,
+          "rssBytes": 85823488,
+          "pssBytes": 81142784,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1476688914,
+          "cpuNs": 1276332000,
+          "rssBytes": 85655552,
+          "pssBytes": 80686080,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1482624450,
+          "cpuNs": 1281964000,
+          "rssBytes": 85725184,
+          "pssBytes": 81045504,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1479540852,
+          "cpuNs": 1277753000,
+          "rssBytes": 85499904,
+          "pssBytes": 80694272,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1474056404,
+          "cpuNs": 1273700000,
+          "rssBytes": 85483520,
+          "pssBytes": 80514048,
+          "sizeBytes": 670285
+        },
+        {
+          "wallNs": 1479236294,
+          "cpuNs": 1278419000,
+          "rssBytes": 85733376,
+          "pssBytes": 81026048,
+          "sizeBytes": 670285
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "table",
+      "n": 20,
+      "wallP50Ms": 2716.615572,
+      "wallP95Ms": 2835.808184,
+      "cpuP50Ms": 3760,
+      "cpuP95Ms": 3880,
+      "rssP50Bytes": 2140033024,
+      "rssP95Bytes": 2180472832,
+      "pssP50Bytes": 1112209408,
+      "pssP95Bytes": 1187719168,
+      "sizeP50Bytes": 8783412,
+      "samples": [
+        {
+          "wallNs": 2709911603,
+          "cpuNs": 3760000000,
+          "rssBytes": 2149818368,
+          "pssBytes": 1115842560,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2649433186,
+          "cpuNs": 3730000000,
+          "rssBytes": 2180472832,
+          "pssBytes": 1160862720,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2743458093,
+          "cpuNs": 3800000000,
+          "rssBytes": 2129846272,
+          "pssBytes": 1103268864,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2719515331,
+          "cpuNs": 3750000000,
+          "rssBytes": 2127368192,
+          "pssBytes": 1135950848,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2709288395,
+          "cpuNs": 3700000000,
+          "rssBytes": 2112831488,
+          "pssBytes": 1082749952,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2870066272,
+          "cpuNs": 3970000000,
+          "rssBytes": 2136768512,
+          "pssBytes": 1090962432,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2739637661,
+          "cpuNs": 3840000000,
+          "rssBytes": 2138935296,
+          "pssBytes": 1085671424,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2669952937,
+          "cpuNs": 3710000000,
+          "rssBytes": 2151698432,
+          "pssBytes": 1134674944,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2746735574,
+          "cpuNs": 3820000000,
+          "rssBytes": 2156392448,
+          "pssBytes": 1119831040,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2728005209,
+          "cpuNs": 3770000000,
+          "rssBytes": 2142883840,
+          "pssBytes": 1089145856,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2681249003,
+          "cpuNs": 3720000000,
+          "rssBytes": 2119233536,
+          "pssBytes": 1130123264,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2704968240,
+          "cpuNs": 3770000000,
+          "rssBytes": 2119839744,
+          "pssBytes": 1088277504,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2675457684,
+          "cpuNs": 3520000000,
+          "rssBytes": 2156748800,
+          "pssBytes": 1112209408,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2686723974,
+          "cpuNs": 3590000000,
+          "rssBytes": 2190143488,
+          "pssBytes": 1197857792,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2716615572,
+          "cpuNs": 3700000000,
+          "rssBytes": 2131390464,
+          "pssBytes": 1091590144,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2790837848,
+          "cpuNs": 3850000000,
+          "rssBytes": 2148589568,
+          "pssBytes": 1121668096,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2835808184,
+          "cpuNs": 3880000000,
+          "rssBytes": 2140033024,
+          "pssBytes": 1125899264,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2746408975,
+          "cpuNs": 3850000000,
+          "rssBytes": 2143555584,
+          "pssBytes": 1099614208,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2755659345,
+          "cpuNs": 3780000000,
+          "rssBytes": 2128023552,
+          "pssBytes": 1101515776,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2692229665,
+          "cpuNs": 3540000000,
+          "rssBytes": 2173779968,
+          "pssBytes": 1187719168,
+          "sizeBytes": 8783412
+        }
+      ]
+    }
+  ],
+  "warm": [
+    {
+      "tool": "printkit",
+      "fixture": "tiny",
+      "n": 20,
+      "wallP50Ms": 90.788072,
+      "wallP95Ms": 105.256997,
+      "cpuP50Ms": 280,
+      "cpuP95Ms": 340,
+      "rssP50Bytes": 1497325568,
+      "rssP95Bytes": 1559564288,
+      "pssP50Bytes": 488120320,
+      "pssP95Bytes": 536971264,
+      "sizeP50Bytes": 14546,
+      "samples": [
+        {
+          "wallNs": 91344025,
+          "cpuNs": 280000000,
+          "rssBytes": 1443807232,
+          "pssBytes": 426304512,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 81616755,
+          "cpuNs": 220000000,
+          "rssBytes": 1427980288,
+          "pssBytes": 437805056,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 90389608,
+          "cpuNs": 290000000,
+          "rssBytes": 1408712704,
+          "pssBytes": 444431360,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 105936208,
+          "cpuNs": 340000000,
+          "rssBytes": 1484267520,
+          "pssBytes": 471826432,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 91658169,
+          "cpuNs": 280000000,
+          "rssBytes": 1497325568,
+          "pssBytes": 471523328,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 100849996,
+          "cpuNs": 360000000,
+          "rssBytes": 1434431488,
+          "pssBytes": 480243712,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 96305049,
+          "cpuNs": 280000000,
+          "rssBytes": 1472847872,
+          "pssBytes": 478621696,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 85683911,
+          "cpuNs": 290000000,
+          "rssBytes": 1430528000,
+          "pssBytes": 480772096,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 88821847,
+          "cpuNs": 270000000,
+          "rssBytes": 1505255424,
+          "pssBytes": 485938176,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 90174059,
+          "cpuNs": 280000000,
+          "rssBytes": 1513922560,
+          "pssBytes": 488120320,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 88327222,
+          "cpuNs": 260000000,
+          "rssBytes": 1523298304,
+          "pssBytes": 494919680,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 86007061,
+          "cpuNs": 250000000,
+          "rssBytes": 1468690432,
+          "pssBytes": 508153856,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 90788072,
+          "cpuNs": 290000000,
+          "rssBytes": 1537916928,
+          "pssBytes": 513699840,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 91946763,
+          "cpuNs": 260000000,
+          "rssBytes": 1520414720,
+          "pssBytes": 518189056,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 88090761,
+          "cpuNs": 320000000,
+          "rssBytes": 1573883904,
+          "pssBytes": 523997184,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 90739273,
+          "cpuNs": 290000000,
+          "rssBytes": 1485762560,
+          "pssBytes": 541317120,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 105256997,
+          "cpuNs": 340000000,
+          "rssBytes": 1559564288,
+          "pssBytes": 536971264,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 94620793,
+          "cpuNs": 260000000,
+          "rssBytes": 1542553600,
+          "pssBytes": 532572160,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 92008538,
+          "cpuNs": 270000000,
+          "rssBytes": 1549758464,
+          "pssBytes": 533862400,
+          "sizeBytes": 14546
+        },
+        {
+          "wallNs": 94103953,
+          "cpuNs": 300000000,
+          "rssBytes": 1517535232,
+          "pssBytes": 533739520,
+          "sizeBytes": 14546
+        }
+      ]
+    },
+    {
+      "tool": "printkit",
+      "fixture": "report",
+      "n": 20,
+      "wallP50Ms": 507.918191,
+      "wallP95Ms": 541.079531,
+      "cpuP50Ms": 940,
+      "cpuP95Ms": 990,
+      "rssP50Bytes": 1637957632,
+      "rssP95Bytes": 1691488256,
+      "pssP50Bytes": 616340480,
+      "pssP95Bytes": 667499520,
+      "sizeP50Bytes": 240632,
+      "samples": [
+        {
+          "wallNs": 522191563,
+          "cpuNs": 960000000,
+          "rssBytes": 1570902016,
+          "pssBytes": 552957952,
+          "sizeBytes": 240638
+        },
+        {
+          "wallNs": 514862938,
+          "cpuNs": 1000000000,
+          "rssBytes": 1588817920,
+          "pssBytes": 560506880,
+          "sizeBytes": 240633
+        },
+        {
+          "wallNs": 496616672,
+          "cpuNs": 900000000,
+          "rssBytes": 1588146176,
+          "pssBytes": 563236864,
+          "sizeBytes": 240638
+        },
+        {
+          "wallNs": 532660397,
+          "cpuNs": 990000000,
+          "rssBytes": 1616781312,
+          "pssBytes": 570362880,
+          "sizeBytes": 240550
+        },
+        {
+          "wallNs": 524588963,
+          "cpuNs": 970000000,
+          "rssBytes": 1603796992,
+          "pssBytes": 580602880,
+          "sizeBytes": 240630
+        },
+        {
+          "wallNs": 512062506,
+          "cpuNs": 930000000,
+          "rssBytes": 1621594112,
+          "pssBytes": 593385472,
+          "sizeBytes": 240633
+        },
+        {
+          "wallNs": 509191090,
+          "cpuNs": 970000000,
+          "rssBytes": 1627795456,
+          "pssBytes": 600140800,
+          "sizeBytes": 240638
+        },
+        {
+          "wallNs": 491052428,
+          "cpuNs": 870000000,
+          "rssBytes": 1630973952,
+          "pssBytes": 607636480,
+          "sizeBytes": 240623
+        },
+        {
+          "wallNs": 494258286,
+          "cpuNs": 930000000,
+          "rssBytes": 1628160000,
+          "pssBytes": 602832896,
+          "sizeBytes": 240552
+        },
+        {
+          "wallNs": 489428427,
+          "cpuNs": 880000000,
+          "rssBytes": 1637957632,
+          "pssBytes": 616340480,
+          "sizeBytes": 240621
+        },
+        {
+          "wallNs": 501085026,
+          "cpuNs": 920000000,
+          "rssBytes": 1646493696,
+          "pssBytes": 624039936,
+          "sizeBytes": 240635
+        },
+        {
+          "wallNs": 475157963,
+          "cpuNs": 830000000,
+          "rssBytes": 1649655808,
+          "pssBytes": 632024064,
+          "sizeBytes": 240625
+        },
+        {
+          "wallNs": 507918191,
+          "cpuNs": 940000000,
+          "rssBytes": 1664229376,
+          "pssBytes": 637253632,
+          "sizeBytes": 240638
+        },
+        {
+          "wallNs": 509919571,
+          "cpuNs": 990000000,
+          "rssBytes": 1688784896,
+          "pssBytes": 663134208,
+          "sizeBytes": 240549
+        },
+        {
+          "wallNs": 500489691,
+          "cpuNs": 890000000,
+          "rssBytes": 1683255296,
+          "pssBytes": 661682176,
+          "sizeBytes": 240630
+        },
+        {
+          "wallNs": 505583663,
+          "cpuNs": 940000000,
+          "rssBytes": 1690107904,
+          "pssBytes": 666077184,
+          "sizeBytes": 240542
+        },
+        {
+          "wallNs": 499388567,
+          "cpuNs": 890000000,
+          "rssBytes": 1691095040,
+          "pssBytes": 667499520,
+          "sizeBytes": 240632
+        },
+        {
+          "wallNs": 536100252,
+          "cpuNs": 970000000,
+          "rssBytes": 1691488256,
+          "pssBytes": 668276736,
+          "sizeBytes": 240648
+        },
+        {
+          "wallNs": 545874878,
+          "cpuNs": 990000000,
+          "rssBytes": 1690599424,
+          "pssBytes": 665913344,
+          "sizeBytes": 240634
+        },
+        {
+          "wallNs": 541079531,
+          "cpuNs": 990000000,
+          "rssBytes": 1691783168,
+          "pssBytes": 665691136,
+          "sizeBytes": 240647
+        }
+      ]
+    },
+    {
+      "tool": "printkit",
+      "fixture": "css",
+      "n": 20,
+      "wallP50Ms": 141.595689,
+      "wallP95Ms": 150.775189,
+      "cpuP50Ms": 420,
+      "cpuP95Ms": 470,
+      "rssP50Bytes": 1582702592,
+      "rssP95Bytes": 1635291136,
+      "pssP50Bytes": 546449408,
+      "pssP95Bytes": 593972224,
+      "sizeP50Bytes": 125490,
+      "samples": [
+        {
+          "wallNs": 141888624,
+          "cpuNs": 460000000,
+          "rssBytes": 1515143168,
+          "pssBytes": 479034368,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 150717448,
+          "cpuNs": 460000000,
+          "rssBytes": 1525854208,
+          "pssBytes": 518119424,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 132960633,
+          "cpuNs": 400000000,
+          "rssBytes": 1529348096,
+          "pssBytes": 488244224,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 145801064,
+          "cpuNs": 400000000,
+          "rssBytes": 1539407872,
+          "pssBytes": 491330560,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 141595689,
+          "cpuNs": 400000000,
+          "rssBytes": 1541074944,
+          "pssBytes": 489827328,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 146754866,
+          "cpuNs": 460000000,
+          "rssBytes": 1562996736,
+          "pssBytes": 522590208,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 150775189,
+          "cpuNs": 460000000,
+          "rssBytes": 1571876864,
+          "pssBytes": 528192512,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 129337957,
+          "cpuNs": 350000000,
+          "rssBytes": 1570942976,
+          "pssBytes": 530393088,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 134091249,
+          "cpuNs": 430000000,
+          "rssBytes": 1575510016,
+          "pssBytes": 537160704,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 129082739,
+          "cpuNs": 390000000,
+          "rssBytes": 1582702592,
+          "pssBytes": 546449408,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 153296739,
+          "cpuNs": 410000000,
+          "rssBytes": 1583304704,
+          "pssBytes": 569270272,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 128482808,
+          "cpuNs": 450000000,
+          "rssBytes": 1591398400,
+          "pssBytes": 556071936,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 142853926,
+          "cpuNs": 420000000,
+          "rssBytes": 1602846720,
+          "pssBytes": 559389696,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 135618771,
+          "cpuNs": 470000000,
+          "rssBytes": 1622794240,
+          "pssBytes": 590239744,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 148819599,
+          "cpuNs": 470000000,
+          "rssBytes": 1635291136,
+          "pssBytes": 585474048,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 127591412,
+          "cpuNs": 390000000,
+          "rssBytes": 1626038272,
+          "pssBytes": 583934976,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 145594011,
+          "cpuNs": 440000000,
+          "rssBytes": 1629167616,
+          "pssBytes": 590866432,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 146561669,
+          "cpuNs": 410000000,
+          "rssBytes": 1625047040,
+          "pssBytes": 609371136,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 136425831,
+          "cpuNs": 420000000,
+          "rssBytes": 1675243520,
+          "pssBytes": 592744448,
+          "sizeBytes": 125490
+        },
+        {
+          "wallNs": 135295674,
+          "cpuNs": 410000000,
+          "rssBytes": 1633689600,
+          "pssBytes": 593972224,
+          "sizeBytes": 125490
+        }
+      ]
+    },
+    {
+      "tool": "printkit",
+      "fixture": "images",
+      "n": 20,
+      "wallP50Ms": 171.226768,
+      "wallP95Ms": 184.084957,
+      "cpuP50Ms": 470,
+      "cpuP95Ms": 540,
+      "rssP50Bytes": 1629528064,
+      "rssP95Bytes": 1702187008,
+      "pssP50Bytes": 630575104,
+      "pssP95Bytes": 705608704,
+      "sizeP50Bytes": 3954215,
+      "samples": [
+        {
+          "wallNs": 183751903,
+          "cpuNs": 500000000,
+          "rssBytes": 1510625280,
+          "pssBytes": 539262976,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 185842851,
+          "cpuNs": 540000000,
+          "rssBytes": 1557458944,
+          "pssBytes": 577140736,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 184022474,
+          "cpuNs": 480000000,
+          "rssBytes": 1540157440,
+          "pssBytes": 572213248,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 163014005,
+          "cpuNs": 470000000,
+          "rssBytes": 1599594496,
+          "pssBytes": 599567360,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 184084957,
+          "cpuNs": 490000000,
+          "rssBytes": 1547841536,
+          "pssBytes": 574584832,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 168974586,
+          "cpuNs": 490000000,
+          "rssBytes": 1629528064,
+          "pssBytes": 627334144,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 180825148,
+          "cpuNs": 550000000,
+          "rssBytes": 1618481152,
+          "pssBytes": 630575104,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 180068676,
+          "cpuNs": 460000000,
+          "rssBytes": 1597927424,
+          "pssBytes": 626371584,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 181870457,
+          "cpuNs": 500000000,
+          "rssBytes": 1584287744,
+          "pssBytes": 620229632,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 168708319,
+          "cpuNs": 470000000,
+          "rssBytes": 1639456768,
+          "pssBytes": 642420736,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 177041523,
+          "cpuNs": 450000000,
+          "rssBytes": 1589149696,
+          "pssBytes": 623095808,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 171226768,
+          "cpuNs": 460000000,
+          "rssBytes": 1638109184,
+          "pssBytes": 645854208,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 151263439,
+          "cpuNs": 420000000,
+          "rssBytes": 1657761792,
+          "pssBytes": 666620928,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 166500081,
+          "cpuNs": 530000000,
+          "rssBytes": 1690705920,
+          "pssBytes": 695201792,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 173981672,
+          "cpuNs": 500000000,
+          "rssBytes": 1658122240,
+          "pssBytes": 690333696,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 168852200,
+          "cpuNs": 450000000,
+          "rssBytes": 1702260736,
+          "pssBytes": 695474176,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 161895019,
+          "cpuNs": 440000000,
+          "rssBytes": 1687871488,
+          "pssBytes": 702603264,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 175530642,
+          "cpuNs": 470000000,
+          "rssBytes": 1702187008,
+          "pssBytes": 705608704,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 169027720,
+          "cpuNs": 460000000,
+          "rssBytes": 1698725888,
+          "pssBytes": 705828864,
+          "sizeBytes": 3954215
+        },
+        {
+          "wallNs": 159395226,
+          "cpuNs": 440000000,
+          "rssBytes": 1658101760,
+          "pssBytes": 701505536,
+          "sizeBytes": 3954215
+        }
+      ]
+    },
+    {
+      "tool": "printkit",
+      "fixture": "table",
+      "n": 20,
+      "wallP50Ms": 2365.755586,
+      "wallP95Ms": 2505.426751,
+      "cpuP50Ms": 3520,
+      "cpuP95Ms": 3850,
+      "rssP50Bytes": 2100076544,
+      "rssP95Bytes": 2267561984,
+      "pssP50Bytes": 1209483264,
+      "pssP95Bytes": 1299282944,
+      "sizeP50Bytes": 8783412,
+      "samples": [
+        {
+          "wallNs": 2357012267,
+          "cpuNs": 3530000000,
+          "rssBytes": 2219802624,
+          "pssBytes": 1173527552,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2365755586,
+          "cpuNs": 3590000000,
+          "rssBytes": 2319286272,
+          "pssBytes": 1304823808,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2484785146,
+          "cpuNs": 3820000000,
+          "rssBytes": 2245603328,
+          "pssBytes": 1253778432,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2377587661,
+          "cpuNs": 3910000000,
+          "rssBytes": 2267561984,
+          "pssBytes": 1199638528,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2505426751,
+          "cpuNs": 3850000000,
+          "rssBytes": 2157625344,
+          "pssBytes": 1199420416,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2349642611,
+          "cpuNs": 3320000000,
+          "rssBytes": 2198679552,
+          "pssBytes": 1242742784,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2335533478,
+          "cpuNs": 3410000000,
+          "rssBytes": 2201587712,
+          "pssBytes": 1299282944,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2438152402,
+          "cpuNs": 3690000000,
+          "rssBytes": 2162905088,
+          "pssBytes": 1209554944,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2552361357,
+          "cpuNs": 3820000000,
+          "rssBytes": 2215960576,
+          "pssBytes": 1250724864,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2402283279,
+          "cpuNs": 3620000000,
+          "rssBytes": 2161758208,
+          "pssBytes": 1212912640,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2299456259,
+          "cpuNs": 3460000000,
+          "rssBytes": 2100076544,
+          "pssBytes": 1273794560,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2294132450,
+          "cpuNs": 3380000000,
+          "rssBytes": 2077028352,
+          "pssBytes": 1209483264,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2361363353,
+          "cpuNs": 3490000000,
+          "rssBytes": 2093813760,
+          "pssBytes": 1217622016,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2356598413,
+          "cpuNs": 3450000000,
+          "rssBytes": 2040512512,
+          "pssBytes": 1191465984,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2454861624,
+          "cpuNs": 3790000000,
+          "rssBytes": 2099970048,
+          "pssBytes": 1191263232,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2372245136,
+          "cpuNs": 3500000000,
+          "rssBytes": 2048139264,
+          "pssBytes": 1192223744,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2359951351,
+          "cpuNs": 3520000000,
+          "rssBytes": 2081755136,
+          "pssBytes": 1204444160,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2340107229,
+          "cpuNs": 3480000000,
+          "rssBytes": 2027143168,
+          "pssBytes": 1185587200,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2380505944,
+          "cpuNs": 3510000000,
+          "rssBytes": 2079809536,
+          "pssBytes": 1234539520,
+          "sizeBytes": 8783412
+        },
+        {
+          "wallNs": 2394083328,
+          "cpuNs": 3570000000,
+          "rssBytes": 2072150016,
+          "pssBytes": 1190572032,
+          "sizeBytes": 8783412
+        }
+      ]
+    }
+  ],
+  "throughput": [
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "tiny",
+      "parallel": 1,
+      "n": 8,
+      "docsPerSecP50": 4.508640390003886,
+      "docsPerSecP95": 4.529527737668307,
+      "wallP50Ms": 221.487987,
+      "wallP95Ms": 224.869703,
+      "cpuP50Ms": 21.038,
+      "cpuP95Ms": 24.147,
+      "rssP50Bytes": 35094528,
+      "rssP95Bytes": 35221504,
+      "pssP50Bytes": 30561280,
+      "pssP95Bytes": 30721024,
+      "sizeP50Bytes": 9839,
+      "samples": [
+        {
+          "wallNs": 221796354,
+          "cpuNs": 21618000,
+          "rssBytes": 35201024,
+          "pssBytes": 30709760,
+          "sizeBytes": 9839,
+          "docsPerSec": 4.508640390003886
+        },
+        {
+          "wallNs": 220773568,
+          "cpuNs": 20382000,
+          "rssBytes": 34820096,
+          "pssBytes": 30324736,
+          "sizeBytes": 9839,
+          "docsPerSec": 4.529527737668307
+        },
+        {
+          "wallNs": 223583004,
+          "cpuNs": 23060000,
+          "rssBytes": 35155968,
+          "pssBytes": 30655488,
+          "sizeBytes": 9839,
+          "docsPerSec": 4.4726118806418755
+        },
+        {
+          "wallNs": 224869703,
+          "cpuNs": 24147000,
+          "rssBytes": 35094528,
+          "pssBytes": 30561280,
+          "sizeBytes": 9839,
+          "docsPerSec": 4.447019703672575
+        },
+        {
+          "wallNs": 222109196,
+          "cpuNs": 21415000,
+          "rssBytes": 35221504,
+          "pssBytes": 30721024,
+          "sizeBytes": 9839,
+          "docsPerSec": 4.502289945707606
+        },
+        {
+          "wallNs": 221078417,
+          "cpuNs": 20648000,
+          "rssBytes": 35008512,
+          "pssBytes": 30468096,
+          "sizeBytes": 9839,
+          "docsPerSec": 4.523281890515798
+        },
+        {
+          "wallNs": 221037648,
+          "cpuNs": 20624000,
+          "rssBytes": 35135488,
+          "pssBytes": 30602240,
+          "sizeBytes": 9839,
+          "docsPerSec": 4.52411618133034
+        },
+        {
+          "wallNs": 221487987,
+          "cpuNs": 21038000,
+          "rssBytes": 34992128,
+          "pssBytes": 30466048,
+          "sizeBytes": 9839,
+          "docsPerSec": 4.5149175517135385
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "tiny",
+      "parallel": 1,
+      "n": 8,
+      "docsPerSecP50": 2.8132753659444596,
+      "docsPerSecP95": 3.0009337375314993,
+      "wallP50Ms": 355.267985,
+      "wallP95Ms": 382.143964,
+      "cpuP50Ms": 650,
+      "cpuP95Ms": 720,
+      "rssP50Bytes": 1370198016,
+      "rssP95Bytes": 1417428992,
+      "pssP50Bytes": 410874880,
+      "pssP95Bytes": 419149824,
+      "sizeP50Bytes": 14546,
+      "samples": [
+        {
+          "wallNs": 360597577,
+          "cpuNs": 660000000,
+          "rssBytes": 1396047872,
+          "pssBytes": 406424576,
+          "sizeBytes": 14546,
+          "docsPerSec": 2.7731744853072042
+        },
+        {
+          "wallNs": 344275714,
+          "cpuNs": 650000000,
+          "rssBytes": 1353916416,
+          "pssBytes": 411474944,
+          "sizeBytes": 14546,
+          "docsPerSec": 2.904648685152389
+        },
+        {
+          "wallNs": 355457561,
+          "cpuNs": 690000000,
+          "rssBytes": 1397026816,
+          "pssBytes": 409066496,
+          "sizeBytes": 14546,
+          "docsPerSec": 2.8132753659444596
+        },
+        {
+          "wallNs": 362520234,
+          "cpuNs": 650000000,
+          "rssBytes": 1362337792,
+          "pssBytes": 410874880,
+          "sizeBytes": 14546,
+          "docsPerSec": 2.75846671775016
+        },
+        {
+          "wallNs": 351225834,
+          "cpuNs": 670000000,
+          "rssBytes": 1357590528,
+          "pssBytes": 412039168,
+          "sizeBytes": 14546,
+          "docsPerSec": 2.8471709743310054
+        },
+        {
+          "wallNs": 333229617,
+          "cpuNs": 590000000,
+          "rssBytes": 1417428992,
+          "pssBytes": 419149824,
+          "sizeBytes": 14546,
+          "docsPerSec": 3.0009337375314993
+        },
+        {
+          "wallNs": 355267985,
+          "cpuNs": 640000000,
+          "rssBytes": 1370198016,
+          "pssBytes": 417135616,
+          "sizeBytes": 14546,
+          "docsPerSec": 2.814776569298807
+        },
+        {
+          "wallNs": 382143964,
+          "cpuNs": 720000000,
+          "rssBytes": 1409380352,
+          "pssBytes": 394075136,
+          "sizeBytes": 14546,
+          "docsPerSec": 2.6168148504368367
+        }
+      ]
+    },
+    {
+      "tool": "printkit-warm",
+      "fixture": "tiny",
+      "parallel": 1,
+      "n": 8,
+      "docsPerSecP50": 10.208660425193768,
+      "docsPerSecP95": 11.137828782301401,
+      "wallP50Ms": 97.424472,
+      "wallP95Ms": 104.132822,
+      "cpuP50Ms": 300,
+      "cpuP95Ms": 340,
+      "rssP50Bytes": 1446043648,
+      "rssP95Bytes": 1488879616,
+      "pssP50Bytes": 456269824,
+      "pssP95Bytes": 484301824,
+      "sizeP50Bytes": 14546,
+      "samples": [
+        {
+          "wallNs": 97424472,
+          "cpuNs": 290000000,
+          "rssBytes": 1384312832,
+          "pssBytes": 434640896,
+          "sizeBytes": 14546,
+          "docsPerSec": 10.26436150457146
+        },
+        {
+          "wallNs": 102346082,
+          "cpuNs": 300000000,
+          "rssBytes": 1442893824,
+          "pssBytes": 428383232,
+          "sizeBytes": 14546,
+          "docsPerSec": 9.770769730100659
+        },
+        {
+          "wallNs": 92925995,
+          "cpuNs": 300000000,
+          "rssBytes": 1481199616,
+          "pssBytes": 443803648,
+          "sizeBytes": 14546,
+          "docsPerSec": 10.761251466825833
+        },
+        {
+          "wallNs": 99568826,
+          "cpuNs": 290000000,
+          "rssBytes": 1485012992,
+          "pssBytes": 456269824,
+          "sizeBytes": 14546,
+          "docsPerSec": 10.043304116089509
+        },
+        {
+          "wallNs": 89784106,
+          "cpuNs": 290000000,
+          "rssBytes": 1435000832,
+          "pssBytes": 470487040,
+          "sizeBytes": 14546,
+          "docsPerSec": 11.137828782301401
+        },
+        {
+          "wallNs": 97956045,
+          "cpuNs": 330000000,
+          "rssBytes": 1446043648,
+          "pssBytes": 477634560,
+          "sizeBytes": 14546,
+          "docsPerSec": 10.208660425193768
+        },
+        {
+          "wallNs": 94314793,
+          "cpuNs": 310000000,
+          "rssBytes": 1488879616,
+          "pssBytes": 482061312,
+          "sizeBytes": 14546,
+          "docsPerSec": 10.60279059298789
+        },
+        {
+          "wallNs": 104132822,
+          "cpuNs": 340000000,
+          "rssBytes": 1448669184,
+          "pssBytes": 484301824,
+          "sizeBytes": 14546,
+          "docsPerSec": 9.60312013824037
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "tiny",
+      "parallel": 4,
+      "n": 8,
+      "docsPerSecP50": 17.78258690057917,
+      "docsPerSecP95": 17.89073542846786,
+      "wallP50Ms": 224.724567,
+      "wallP95Ms": 226.836924,
+      "cpuP50Ms": 20.70625,
+      "cpuP95Ms": 22.12725,
+      "rssP50Bytes": 141099008,
+      "rssP95Bytes": 145674240,
+      "pssP50Bytes": 50784256,
+      "pssP95Bytes": 51617792,
+      "sizeP50Bytes": 9839,
+      "samples": [
+        {
+          "wallNs": 226836924,
+          "cpuNs": 21536250,
+          "rssBytes": 140587008,
+          "pssBytes": 51335168,
+          "sizeBytes": 9839,
+          "docsPerSec": 17.633813443881827
+        },
+        {
+          "wallNs": 224499834,
+          "cpuNs": 20869750,
+          "rssBytes": 140623872,
+          "pssBytes": 50959360,
+          "sizeBytes": 9839,
+          "docsPerSec": 17.817385112186763
+        },
+        {
+          "wallNs": 225247764,
+          "cpuNs": 21351500,
+          "rssBytes": 141099008,
+          "pssBytes": 51609600,
+          "sizeBytes": 9839,
+          "docsPerSec": 17.758222896277008
+        },
+        {
+          "wallNs": 225369794,
+          "cpuNs": 20460250,
+          "rssBytes": 145674240,
+          "pssBytes": 50784256,
+          "sizeBytes": 9839,
+          "docsPerSec": 17.74860742873111
+        },
+        {
+          "wallNs": 223579406,
+          "cpuNs": 20403250,
+          "rssBytes": 141561856,
+          "pssBytes": 50619392,
+          "sizeBytes": 9839,
+          "docsPerSec": 17.89073542846786
+        },
+        {
+          "wallNs": 224939151,
+          "cpuNs": 20706250,
+          "rssBytes": 142422016,
+          "pssBytes": 51617792,
+          "sizeBytes": 9839,
+          "docsPerSec": 17.78258690057917
+        },
+        {
+          "wallNs": 223709820,
+          "cpuNs": 20599750,
+          "rssBytes": 140976128,
+          "pssBytes": 50589696,
+          "sizeBytes": 9839,
+          "docsPerSec": 17.88030583547919
+        },
+        {
+          "wallNs": 224724567,
+          "cpuNs": 22127250,
+          "rssBytes": 142430208,
+          "pssBytes": 50748416,
+          "sizeBytes": 9839,
+          "docsPerSec": 17.799567058460504
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "tiny",
+      "parallel": 4,
+      "n": 8,
+      "docsPerSecP50": 3.856273664903057,
+      "docsPerSecP95": 4.066302724982349,
+      "wallP50Ms": 1032.019136,
+      "wallP95Ms": 1139.080515,
+      "cpuP50Ms": 680,
+      "cpuP95Ms": 757.5,
+      "rssP50Bytes": 5222240256,
+      "rssP95Bytes": 5439164416,
+      "pssP50Bytes": 969419776,
+      "pssP95Bytes": 1064246272,
+      "sizeP50Bytes": 14546,
+      "samples": [
+        {
+          "wallNs": 1037270782,
+          "cpuNs": 697500000,
+          "rssBytes": 5071122432,
+          "pssBytes": 969419776,
+          "sizeBytes": 14546,
+          "docsPerSec": 3.856273664903057
+        },
+        {
+          "wallNs": 1133524222,
+          "cpuNs": 757500000,
+          "rssBytes": 5439164416,
+          "pssBytes": 903234560,
+          "sizeBytes": 14546,
+          "docsPerSec": 3.528817401839341
+        },
+        {
+          "wallNs": 1139080515,
+          "cpuNs": 737500000,
+          "rssBytes": 5363757056,
+          "pssBytes": 994309120,
+          "sizeBytes": 14546,
+          "docsPerSec": 3.5116042696946668
+        },
+        {
+          "wallNs": 1016896700,
+          "cpuNs": 680000000,
+          "rssBytes": 5239312384,
+          "pssBytes": 1064246272,
+          "sizeBytes": 14546,
+          "docsPerSec": 3.9335362185755938
+        },
+        {
+          "wallNs": 1032019136,
+          "cpuNs": 657500000,
+          "rssBytes": 5347061760,
+          "pssBytes": 873199616,
+          "sizeBytes": 14546,
+          "docsPerSec": 3.8758971228998607
+        },
+        {
+          "wallNs": 1092766015,
+          "cpuNs": 727500000,
+          "rssBytes": 5133152256,
+          "pssBytes": 898046976,
+          "sizeBytes": 14546,
+          "docsPerSec": 3.6604359442858403
+        },
+        {
+          "wallNs": 1020085566,
+          "cpuNs": 652500000,
+          "rssBytes": 5184217088,
+          "pssBytes": 1059260416,
+          "sizeBytes": 14546,
+          "docsPerSec": 3.9212396815739274
+        },
+        {
+          "wallNs": 983694592,
+          "cpuNs": 667500000,
+          "rssBytes": 5222240256,
+          "pssBytes": 982590464,
+          "sizeBytes": 14546,
+          "docsPerSec": 4.066302724982349
+        }
+      ]
+    },
+    {
+      "tool": "printkit-warm",
+      "fixture": "tiny",
+      "parallel": 4,
+      "n": 8,
+      "docsPerSecP50": 12.042686434078115,
+      "docsPerSecP95": 13.582198922895634,
+      "wallP50Ms": 320.442576,
+      "wallP95Ms": 353.661679,
+      "cpuP50Ms": 267.5,
+      "cpuP95Ms": 315,
+      "rssP50Bytes": 2044297216,
+      "rssP95Bytes": 2252595200,
+      "pssP50Bytes": 665999360,
+      "pssP95Bytes": 712217600,
+      "sizeP50Bytes": 14546,
+      "samples": [
+        {
+          "wallNs": 320442576,
+          "cpuNs": 285000000,
+          "rssBytes": 1964589056,
+          "pssBytes": 580645888,
+          "sizeBytes": 14546,
+          "docsPerSec": 12.482735752317758
+        },
+        {
+          "wallNs": 319500489,
+          "cpuNs": 267500000,
+          "rssBytes": 2044297216,
+          "pssBytes": 601794560,
+          "sizeBytes": 14546,
+          "docsPerSec": 12.519542653970712
+        },
+        {
+          "wallNs": 294503123,
+          "cpuNs": 252500000,
+          "rssBytes": 2052767744,
+          "pssBytes": 608286720,
+          "sizeBytes": 14546,
+          "docsPerSec": 13.582198922895634
+        },
+        {
+          "wallNs": 301250754,
+          "cpuNs": 250000000,
+          "rssBytes": 2041884672,
+          "pssBytes": 665999360,
+          "sizeBytes": 14546,
+          "docsPerSec": 13.277975065250791
+        },
+        {
+          "wallNs": 346218575,
+          "cpuNs": 282500000,
+          "rssBytes": 2045677568,
+          "pssBytes": 699320320,
+          "sizeBytes": 14546,
+          "docsPerSec": 11.553395134850868
+        },
+        {
+          "wallNs": 353661679,
+          "cpuNs": 315000000,
+          "rssBytes": 2190729216,
+          "pssBytes": 712217600,
+          "sizeBytes": 14546,
+          "docsPerSec": 11.310244330995216
+        },
+        {
+          "wallNs": 332151802,
+          "cpuNs": 265000000,
+          "rssBytes": 2009878528,
+          "pssBytes": 690804736,
+          "sizeBytes": 14546,
+          "docsPerSec": 12.042686434078115
+        },
+        {
+          "wallNs": 340437139,
+          "cpuNs": 292500000,
+          "rssBytes": 2252595200,
+          "pssBytes": 704756736,
+          "sizeBytes": 14546,
+          "docsPerSec": 11.749599387862322
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "tiny",
+      "parallel": 8,
+      "n": 8,
+      "docsPerSecP50": 33.36559257847122,
+      "docsPerSecP95": 33.727020410833894,
+      "wallP50Ms": 239.238653,
+      "wallP95Ms": 241.506299,
+      "cpuP50Ms": 19.816,
+      "cpuP95Ms": 20.55725,
+      "rssP50Bytes": 282873856,
+      "rssP95Bytes": 286273536,
+      "pssP50Bytes": 75473920,
+      "pssP95Bytes": 77638656,
+      "sizeP50Bytes": 9839,
+      "samples": [
+        {
+          "wallNs": 240037837,
+          "cpuNs": 19999250,
+          "rssBytes": 283082752,
+          "pssBytes": 75557888,
+          "sizeBytes": 9839,
+          "docsPerSec": 33.32807902280839
+        },
+        {
+          "wallNs": 237833070,
+          "cpuNs": 19722125,
+          "rssBytes": 282198016,
+          "pssBytes": 75398144,
+          "sizeBytes": 9839,
+          "docsPerSec": 33.6370379443027
+        },
+        {
+          "wallNs": 239767958,
+          "cpuNs": 19846625,
+          "rssBytes": 284467200,
+          "pssBytes": 75440128,
+          "sizeBytes": 9839,
+          "docsPerSec": 33.36559257847122
+        },
+        {
+          "wallNs": 237328920,
+          "cpuNs": 19650125,
+          "rssBytes": 282972160,
+          "pssBytes": 75298816,
+          "sizeBytes": 9839,
+          "docsPerSec": 33.70849199499159
+        },
+        {
+          "wallNs": 241393622,
+          "cpuNs": 19816000,
+          "rssBytes": 281878528,
+          "pssBytes": 77638656,
+          "sizeBytes": 9839,
+          "docsPerSec": 33.140892181484396
+        },
+        {
+          "wallNs": 237198540,
+          "cpuNs": 19610000,
+          "rssBytes": 282873856,
+          "pssBytes": 75473920,
+          "sizeBytes": 9839,
+          "docsPerSec": 33.727020410833894
+        },
+        {
+          "wallNs": 239238653,
+          "cpuNs": 19901375,
+          "rssBytes": 281001984,
+          "pssBytes": 75499520,
+          "sizeBytes": 9839,
+          "docsPerSec": 33.43941248490477
+        },
+        {
+          "wallNs": 241506299,
+          "cpuNs": 20557250,
+          "rssBytes": 286273536,
+          "pssBytes": 75804672,
+          "sizeBytes": 9839,
+          "docsPerSec": 33.125429991372606
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "tiny",
+      "parallel": 8,
+      "n": 8,
+      "docsPerSecP50": 3.91843320860389,
+      "docsPerSecP95": 4.17198934499579,
+      "wallP50Ms": 2029.178717,
+      "wallP95Ms": 2128.293166,
+      "cpuP50Ms": 675,
+      "cpuP95Ms": 730,
+      "rssP50Bytes": 9941979136,
+      "rssP95Bytes": 10706239488,
+      "pssP50Bytes": 1342068736,
+      "pssP95Bytes": 1711500288,
+      "sizeP50Bytes": 14546,
+      "samples": [
+        {
+          "wallNs": 2088906978,
+          "cpuNs": 730000000,
+          "rssBytes": 10320293888,
+          "pssBytes": 1564374016,
+          "sizeBytes": 14546,
+          "docsPerSec": 3.8297540695945727
+        },
+        {
+          "wallNs": 1980029789,
+          "cpuNs": 637500000,
+          "rssBytes": 9713762304,
+          "pssBytes": 1342068736,
+          "sizeBytes": 14546,
+          "docsPerSec": 4.040343253643847
+        },
+        {
+          "wallNs": 1917550439,
+          "cpuNs": 645000000,
+          "rssBytes": 10444754944,
+          "pssBytes": 958210048,
+          "sizeBytes": 14546,
+          "docsPerSec": 4.17198934499579
+        },
+        {
+          "wallNs": 2029178717,
+          "cpuNs": 700000000,
+          "rssBytes": 10193330176,
+          "pssBytes": 1252975616,
+          "sizeBytes": 14546,
+          "docsPerSec": 3.9424817207956155
+        },
+        {
+          "wallNs": 2128293166,
+          "cpuNs": 728750000,
+          "rssBytes": 9934798848,
+          "pssBytes": 1473752064,
+          "sizeBytes": 14546,
+          "docsPerSec": 3.7588806503737087
+        },
+        {
+          "wallNs": 1989128686,
+          "cpuNs": 646250000,
+          "rssBytes": 8704016384,
+          "pssBytes": 1426038784,
+          "sizeBytes": 14546,
+          "docsPerSec": 4.021861459394789
+        },
+        {
+          "wallNs": 2091356494,
+          "cpuNs": 697500000,
+          "rssBytes": 9941979136,
+          "pssBytes": 1711500288,
+          "sizeBytes": 14546,
+          "docsPerSec": 3.8252684432097595
+        },
+        {
+          "wallNs": 2041632350,
+          "cpuNs": 675000000,
+          "rssBytes": 10706239488,
+          "pssBytes": 1024210944,
+          "sizeBytes": 14546,
+          "docsPerSec": 3.91843320860389
+        }
+      ]
+    },
+    {
+      "tool": "printkit-warm",
+      "fixture": "tiny",
+      "parallel": 8,
+      "n": 8,
+      "docsPerSecP50": 11.172356245644814,
+      "docsPerSecP95": 12.115630321823746,
+      "wallP50Ms": 700.184807,
+      "wallP95Ms": 735.690571,
+      "cpuP50Ms": 295,
+      "cpuP95Ms": 320,
+      "rssP50Bytes": 2797481984,
+      "rssP95Bytes": 3052515328,
+      "pssP50Bytes": 935302144,
+      "pssP95Bytes": 1027509248,
+      "sizeP50Bytes": 14546,
+      "samples": [
+        {
+          "wallNs": 700184807,
+          "cpuNs": 295000000,
+          "rssBytes": 2528010240,
+          "pssBytes": 719715328,
+          "sizeBytes": 14546,
+          "docsPerSec": 11.425554967804379
+        },
+        {
+          "wallNs": 735690571,
+          "cpuNs": 320000000,
+          "rssBytes": 2766221312,
+          "pssBytes": 839368704,
+          "sizeBytes": 14546,
+          "docsPerSec": 10.874136920262364
+        },
+        {
+          "wallNs": 660304069,
+          "cpuNs": 286250000,
+          "rssBytes": 2797481984,
+          "pssBytes": 881037312,
+          "sizeBytes": 14546,
+          "docsPerSec": 12.115630321823746
+        },
+        {
+          "wallNs": 716053071,
+          "cpuNs": 311250000,
+          "rssBytes": 2647060480,
+          "pssBytes": 935302144,
+          "sizeBytes": 14546,
+          "docsPerSec": 11.172356245644814
+        },
+        {
+          "wallNs": 724765308,
+          "cpuNs": 317500000,
+          "rssBytes": 3052515328,
+          "pssBytes": 1027509248,
+          "sizeBytes": 14546,
+          "docsPerSec": 11.038055921959222
+        },
+        {
+          "wallNs": 734042813,
+          "cpuNs": 303750000,
+          "rssBytes": 2888445952,
+          "pssBytes": 983666688,
+          "sizeBytes": 14546,
+          "docsPerSec": 10.89854686718389
+        },
+        {
+          "wallNs": 680953237,
+          "cpuNs": 288750000,
+          "rssBytes": 2848829440,
+          "pssBytes": 1011756032,
+          "sizeBytes": 14546,
+          "docsPerSec": 11.74823697915691
+        },
+        {
+          "wallNs": 679894102,
+          "cpuNs": 295000000,
+          "rssBytes": 2919620608,
+          "pssBytes": 1024204800,
+          "sizeBytes": 14546,
+          "docsPerSec": 11.766538313050406
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "report",
+      "parallel": 1,
+      "n": 8,
+      "docsPerSecP50": 1.388037726804341,
+      "docsPerSecP95": 1.3966866720523463,
+      "wallP50Ms": 719.993833,
+      "wallP95Ms": 723.968265,
+      "cpuP50Ms": 119.133,
+      "cpuP95Ms": 122.97,
+      "rssP50Bytes": 46170112,
+      "rssP95Bytes": 46833664,
+      "pssP50Bytes": 40718336,
+      "pssP95Bytes": 41583616,
+      "sizeP50Bytes": 180121,
+      "samples": [
+        {
+          "wallNs": 721073141,
+          "cpuNs": 120053000,
+          "rssBytes": 45973504,
+          "pssBytes": 40468480,
+          "sizeBytes": 180121,
+          "docsPerSec": 1.3868218674920803
+        },
+        {
+          "wallNs": 723968265,
+          "cpuNs": 122970000,
+          "rssBytes": 46776320,
+          "pssBytes": 41583616,
+          "sizeBytes": 180121,
+          "docsPerSec": 1.3812760149093
+        },
+        {
+          "wallNs": 719960953,
+          "cpuNs": 119133000,
+          "rssBytes": 46170112,
+          "pssBytes": 40524800,
+          "sizeBytes": 180121,
+          "docsPerSec": 1.3889642151190387
+        },
+        {
+          "wallNs": 719993833,
+          "cpuNs": 119022000,
+          "rssBytes": 46198784,
+          "pssBytes": 40828928,
+          "sizeBytes": 180121,
+          "docsPerSec": 1.38890078520992
+        },
+        {
+          "wallNs": 720824183,
+          "cpuNs": 119419000,
+          "rssBytes": 46084096,
+          "pssBytes": 40522752,
+          "sizeBytes": 180121,
+          "docsPerSec": 1.3873008475355217
+        },
+        {
+          "wallNs": 720441513,
+          "cpuNs": 119723000,
+          "rssBytes": 46157824,
+          "pssBytes": 40718336,
+          "sizeBytes": 180121,
+          "docsPerSec": 1.388037726804341
+        },
+        {
+          "wallNs": 716997899,
+          "cpuNs": 116188000,
+          "rssBytes": 46833664,
+          "pssBytes": 40785920,
+          "sizeBytes": 180121,
+          "docsPerSec": 1.394704226322984
+        },
+        {
+          "wallNs": 715980198,
+          "cpuNs": 115157000,
+          "rssBytes": 46813184,
+          "pssBytes": 40834048,
+          "sizeBytes": 180121,
+          "docsPerSec": 1.3966866720523463
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "report",
+      "parallel": 1,
+      "n": 8,
+      "docsPerSecP50": 1.2849593377765711,
+      "docsPerSecP95": 1.3015876318186779,
+      "wallP50Ms": 775.718701,
+      "wallP95Ms": 799.841107,
+      "cpuP50Ms": 1340,
+      "cpuP95Ms": 1370,
+      "rssP50Bytes": 1541517312,
+      "rssP95Bytes": 1546350592,
+      "pssP50Bytes": 532088832,
+      "pssP95Bytes": 536038400,
+      "sizeP50Bytes": 240630,
+      "samples": [
+        {
+          "wallNs": 793078305,
+          "cpuNs": 1370000000,
+          "rssBytes": 1541517312,
+          "pssBytes": 516888576,
+          "sizeBytes": 240619,
+          "docsPerSec": 1.2609095390649983
+        },
+        {
+          "wallNs": 775718701,
+          "cpuNs": 1330000000,
+          "rssBytes": 1540317184,
+          "pssBytes": 532441088,
+          "sizeBytes": 240647,
+          "docsPerSec": 1.2891271007272005
+        },
+        {
+          "wallNs": 792766851,
+          "cpuNs": 1320000000,
+          "rssBytes": 1546350592,
+          "pssBytes": 532589568,
+          "sizeBytes": 240636,
+          "docsPerSec": 1.2614049120981725
+        },
+        {
+          "wallNs": 773635847,
+          "cpuNs": 1330000000,
+          "rssBytes": 1537888256,
+          "pssBytes": 531503104,
+          "sizeBytes": 240635,
+          "docsPerSec": 1.2925978079710156
+        },
+        {
+          "wallNs": 778234743,
+          "cpuNs": 1340000000,
+          "rssBytes": 1543876608,
+          "pssBytes": 532401152,
+          "sizeBytes": 240630,
+          "docsPerSec": 1.2849593377765711
+        },
+        {
+          "wallNs": 799841107,
+          "cpuNs": 1360000000,
+          "rssBytes": 1542447104,
+          "pssBytes": 519791616,
+          "sizeBytes": 240627,
+          "docsPerSec": 1.2502483196328142
+        },
+        {
+          "wallNs": 770730246,
+          "cpuNs": 1360000000,
+          "rssBytes": 1538752512,
+          "pssBytes": 532088832,
+          "sizeBytes": 240630,
+          "docsPerSec": 1.2974708144514677
+        },
+        {
+          "wallNs": 768292488,
+          "cpuNs": 1340000000,
+          "rssBytes": 1542598656,
+          "pssBytes": 536038400,
+          "sizeBytes": 240633,
+          "docsPerSec": 1.3015876318186779
+        }
+      ]
+    },
+    {
+      "tool": "printkit-warm",
+      "fixture": "report",
+      "parallel": 1,
+      "n": 8,
+      "docsPerSecP50": 2.0546428907171896,
+      "docsPerSecP95": 2.1042644385519567,
+      "wallP50Ms": 480.519743,
+      "wallP95Ms": 500.161719,
+      "cpuP50Ms": 870,
+      "cpuP95Ms": 980,
+      "rssP50Bytes": 1601138688,
+      "rssP95Bytes": 1640230912,
+      "pssP50Bytes": 569947136,
+      "pssP95Bytes": 604490752,
+      "sizeP50Bytes": 240630,
+      "samples": [
+        {
+          "wallNs": 479603521,
+          "cpuNs": 870000000,
+          "rssBytes": 1562181632,
+          "pssBytes": 537958400,
+          "sizeBytes": 240630,
+          "docsPerSec": 2.085055584902597
+        },
+        {
+          "wallNs": 486702582,
+          "cpuNs": 850000000,
+          "rssBytes": 1585971200,
+          "pssBytes": 560338944,
+          "sizeBytes": 240631,
+          "docsPerSec": 2.0546428907171896
+        },
+        {
+          "wallNs": 491342578,
+          "cpuNs": 930000000,
+          "rssBytes": 1601138688,
+          "pssBytes": 563656704,
+          "sizeBytes": 240634,
+          "docsPerSec": 2.035239860690437
+        },
+        {
+          "wallNs": 475225443,
+          "cpuNs": 870000000,
+          "rssBytes": 1598930944,
+          "pssBytes": 569947136,
+          "sizeBytes": 240645,
+          "docsPerSec": 2.1042644385519567
+        },
+        {
+          "wallNs": 480519743,
+          "cpuNs": 860000000,
+          "rssBytes": 1609699328,
+          "pssBytes": 575950848,
+          "sizeBytes": 240633,
+          "docsPerSec": 2.081079944305223
+        },
+        {
+          "wallNs": 497413959,
+          "cpuNs": 890000000,
+          "rssBytes": 1611444224,
+          "pssBytes": 581148672,
+          "sizeBytes": 240624,
+          "docsPerSec": 2.010397943013899
+        },
+        {
+          "wallNs": 477505184,
+          "cpuNs": 880000000,
+          "rssBytes": 1631698944,
+          "pssBytes": 593596416,
+          "sizeBytes": 240627,
+          "docsPerSec": 2.0942181017243153
+        },
+        {
+          "wallNs": 500161719,
+          "cpuNs": 980000000,
+          "rssBytes": 1640230912,
+          "pssBytes": 604490752,
+          "sizeBytes": 240481,
+          "docsPerSec": 1.9993533331566307
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "report",
+      "parallel": 4,
+      "n": 8,
+      "docsPerSecP50": 5.489589454039729,
+      "docsPerSecP95": 5.520141654121431,
+      "wallP50Ms": 728.117844,
+      "wallP95Ms": 739.065059,
+      "cpuP50Ms": 114.559,
+      "cpuP95Ms": 115.86125,
+      "rssP50Bytes": 186613760,
+      "rssP95Bytes": 187256832,
+      "pssP50Bytes": 84843520,
+      "pssP95Bytes": 85262336,
+      "sizeP50Bytes": 180121,
+      "samples": [
+        {
+          "wallNs": 729776886,
+          "cpuNs": 114559000,
+          "rssBytes": 186302464,
+          "pssBytes": 85262336,
+          "sizeBytes": 180121,
+          "docsPerSec": 5.481127282510288
+        },
+        {
+          "wallNs": 726640684,
+          "cpuNs": 114533500,
+          "rssBytes": 186707968,
+          "pssBytes": 84593664,
+          "sizeBytes": 180121,
+          "docsPerSec": 5.504783984817453
+        },
+        {
+          "wallNs": 724619086,
+          "cpuNs": 113785250,
+          "rssBytes": 186613760,
+          "pssBytes": 84843520,
+          "sizeBytes": 180121,
+          "docsPerSec": 5.520141654121431
+        },
+        {
+          "wallNs": 733148362,
+          "cpuNs": 113440000,
+          "rssBytes": 186359808,
+          "pssBytes": 84695040,
+          "sizeBytes": 180121,
+          "docsPerSec": 5.45592162149576
+        },
+        {
+          "wallNs": 728117844,
+          "cpuNs": 115425750,
+          "rssBytes": 187256832,
+          "pssBytes": 85073920,
+          "sizeBytes": 180121,
+          "docsPerSec": 5.493616222925584
+        },
+        {
+          "wallNs": 725133786,
+          "cpuNs": 115498250,
+          "rssBytes": 185262080,
+          "pssBytes": 85250048,
+          "sizeBytes": 180121,
+          "docsPerSec": 5.51622345728075
+        },
+        {
+          "wallNs": 728651939,
+          "cpuNs": 115093750,
+          "rssBytes": 186961920,
+          "pssBytes": 83520512,
+          "sizeBytes": 180121,
+          "docsPerSec": 5.489589454039729
+        },
+        {
+          "wallNs": 739065059,
+          "cpuNs": 115861250,
+          "rssBytes": 186671104,
+          "pssBytes": 85075968,
+          "sizeBytes": 180121,
+          "docsPerSec": 5.412243416583979
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "report",
+      "parallel": 4,
+      "n": 8,
+      "docsPerSecP50": 2.2057122783333534,
+      "docsPerSecP95": 2.2717991485470583,
+      "wallP50Ms": 1805.885927,
+      "wallP95Ms": 1867.48921,
+      "cpuP50Ms": 1355,
+      "cpuP95Ms": 1400,
+      "rssP50Bytes": 6027526144,
+      "rssP95Bytes": 6149451776,
+      "pssP50Bytes": 1379312640,
+      "pssP95Bytes": 1404971008,
+      "sizeP50Bytes": 240615,
+      "samples": [
+        {
+          "wallNs": 1800942277,
+          "cpuNs": 1340000000,
+          "rssBytes": 6027526144,
+          "pssBytes": 1353724928,
+          "sizeBytes": 240612,
+          "docsPerSec": 2.2210595259405976
+        },
+        {
+          "wallNs": 1867489210,
+          "cpuNs": 1400000000,
+          "rssBytes": 5999714304,
+          "pssBytes": 1397547008,
+          "sizeBytes": 240631,
+          "docsPerSec": 2.141913312580799
+        },
+        {
+          "wallNs": 1813473153,
+          "cpuNs": 1355000000,
+          "rssBytes": 6113050624,
+          "pssBytes": 1376726016,
+          "sizeBytes": 240608,
+          "docsPerSec": 2.2057122783333534
+        },
+        {
+          "wallNs": 1827510847,
+          "cpuNs": 1360000000,
+          "rssBytes": 6040260608,
+          "pssBytes": 1369138176,
+          "sizeBytes": 240635,
+          "docsPerSec": 2.1887694984499317
+        },
+        {
+          "wallNs": 1805885927,
+          "cpuNs": 1362500000,
+          "rssBytes": 5998616576,
+          "pssBytes": 1404971008,
+          "sizeBytes": 240591,
+          "docsPerSec": 2.2149793296440037
+        },
+        {
+          "wallNs": 1846706348,
+          "cpuNs": 1342500000,
+          "rssBytes": 6037577728,
+          "pssBytes": 1379312640,
+          "sizeBytes": 240637,
+          "docsPerSec": 2.1660184383575856
+        },
+        {
+          "wallNs": 1774148952,
+          "cpuNs": 1355000000,
+          "rssBytes": 6149451776,
+          "pssBytes": 1385492480,
+          "sizeBytes": 240615,
+          "docsPerSec": 2.2546021265524496
+        },
+        {
+          "wallNs": 1760719033,
+          "cpuNs": 1327500000,
+          "rssBytes": 6006333440,
+          "pssBytes": 1382049792,
+          "sizeBytes": 240634,
+          "docsPerSec": 2.2717991485470583
+        }
+      ]
+    },
+    {
+      "tool": "printkit-warm",
+      "fixture": "report",
+      "parallel": 4,
+      "n": 8,
+      "docsPerSecP50": 4.278778613274316,
+      "docsPerSecP95": 4.379477666924804,
+      "wallP50Ms": 927.298841,
+      "wallP95Ms": 951.97878,
+      "cpuP50Ms": 845,
+      "cpuP95Ms": 875,
+      "rssP50Bytes": 2542374912,
+      "rssP95Bytes": 2657112064,
+      "pssP50Bytes": 996210688,
+      "pssP95Bytes": 1048865792,
+      "sizeP50Bytes": 240612,
+      "samples": [
+        {
+          "wallNs": 926524386,
+          "cpuNs": 852500000,
+          "rssBytes": 2425606144,
+          "pssBytes": 850710528,
+          "sizeBytes": 240612,
+          "docsPerSec": 4.317209628198604
+        },
+        {
+          "wallNs": 950304367,
+          "cpuNs": 875000000,
+          "rssBytes": 2500227072,
+          "pssBytes": 940530688,
+          "sizeBytes": 240629,
+          "docsPerSec": 4.209177752836739
+        },
+        {
+          "wallNs": 951978780,
+          "cpuNs": 872500000,
+          "rssBytes": 2443255808,
+          "pssBytes": 938721280,
+          "sizeBytes": 240611,
+          "docsPerSec": 4.201774329465621
+        },
+        {
+          "wallNs": 927298841,
+          "cpuNs": 845000000,
+          "rssBytes": 2608529408,
+          "pssBytes": 1005337600,
+          "sizeBytes": 240634,
+          "docsPerSec": 4.313604011071981
+        },
+        {
+          "wallNs": 934846217,
+          "cpuNs": 835000000,
+          "rssBytes": 2651500544,
+          "pssBytes": 1048865792,
+          "sizeBytes": 240602,
+          "docsPerSec": 4.278778613274316
+        },
+        {
+          "wallNs": 947778736,
+          "cpuNs": 870000000,
+          "rssBytes": 2657112064,
+          "pssBytes": 1004974080,
+          "sizeBytes": 240637,
+          "docsPerSec": 4.220394326297694
+        },
+        {
+          "wallNs": 916632988,
+          "cpuNs": 832500000,
+          "rssBytes": 2582990848,
+          "pssBytes": 1031408640,
+          "sizeBytes": 240610,
+          "docsPerSec": 4.36379669111363
+        },
+        {
+          "wallNs": 913350930,
+          "cpuNs": 832500000,
+          "rssBytes": 2542374912,
+          "pssBytes": 996210688,
+          "sizeBytes": 240628,
+          "docsPerSec": 4.379477666924804
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "report",
+      "parallel": 8,
+      "n": 8,
+      "docsPerSecP50": 9.77201007575835,
+      "docsPerSecP95": 10.022267837989656,
+      "wallP50Ms": 818.649488,
+      "wallP95Ms": 830.100611,
+      "cpuP50Ms": 115.2625,
+      "cpuP95Ms": 119.616875,
+      "rssP50Bytes": 370737152,
+      "rssP95Bytes": 372305920,
+      "pssP50Bytes": 140916736,
+      "pssP95Bytes": 144771072,
+      "sizeP50Bytes": 180121,
+      "samples": [
+        {
+          "wallNs": 798222531,
+          "cpuNs": 115131375,
+          "rssBytes": 372305920,
+          "pssBytes": 140839936,
+          "sizeBytes": 180121,
+          "docsPerSec": 10.022267837989656
+        },
+        {
+          "wallNs": 815132146,
+          "cpuNs": 116516625,
+          "rssBytes": 370737152,
+          "pssBytes": 140987392,
+          "sizeBytes": 180121,
+          "docsPerSec": 9.814359597100223
+        },
+        {
+          "wallNs": 818664731,
+          "cpuNs": 115262500,
+          "rssBytes": 366243840,
+          "pssBytes": 140916736,
+          "sizeBytes": 180121,
+          "docsPerSec": 9.77201007575835
+        },
+        {
+          "wallNs": 819282881,
+          "cpuNs": 117158000,
+          "rssBytes": 371212288,
+          "pssBytes": 141023232,
+          "sizeBytes": 180121,
+          "docsPerSec": 9.764637081438053
+        },
+        {
+          "wallNs": 830100611,
+          "cpuNs": 119616875,
+          "rssBytes": 371744768,
+          "pssBytes": 144771072,
+          "sizeBytes": 180121,
+          "docsPerSec": 9.637385991515671
+        },
+        {
+          "wallNs": 812476402,
+          "cpuNs": 116043000,
+          "rssBytes": 370458624,
+          "pssBytes": 140738560,
+          "sizeBytes": 180121,
+          "docsPerSec": 9.846439823122395
+        },
+        {
+          "wallNs": 818649488,
+          "cpuNs": 115048125,
+          "rssBytes": 364228608,
+          "pssBytes": 140915712,
+          "sizeBytes": 180121,
+          "docsPerSec": 9.772192027560395
+        },
+        {
+          "wallNs": 819697971,
+          "cpuNs": 115232125,
+          "rssBytes": 371359744,
+          "pssBytes": 141858816,
+          "sizeBytes": 180121,
+          "docsPerSec": 9.759692329407999
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "report",
+      "parallel": 8,
+      "n": 8,
+      "docsPerSecP50": 2.3086300350313484,
+      "docsPerSecP95": 2.3581073318845007,
+      "wallP50Ms": 3441.687482,
+      "wallP95Ms": 3557.384529,
+      "cpuP50Ms": 1366.25,
+      "cpuP95Ms": 1410,
+      "rssP50Bytes": 11928711168,
+      "rssP95Bytes": 12107489280,
+      "pssP50Bytes": 2453440512,
+      "pssP95Bytes": 2488624128,
+      "sizeP50Bytes": 240632,
+      "samples": [
+        {
+          "wallNs": 3433598121,
+          "cpuNs": 1372500000,
+          "rssBytes": 11928711168,
+          "pssBytes": 2417821696,
+          "sizeBytes": 240618,
+          "docsPerSec": 2.3299173980413532
+        },
+        {
+          "wallNs": 3441687482,
+          "cpuNs": 1357500000,
+          "rssBytes": 11953709056,
+          "pssBytes": 2425316352,
+          "sizeBytes": 240636,
+          "docsPerSec": 2.324441147501027
+        },
+        {
+          "wallNs": 3392551260,
+          "cpuNs": 1366250000,
+          "rssBytes": 11939487744,
+          "pssBytes": 2474289152,
+          "sizeBytes": 240634,
+          "docsPerSec": 2.3581073318845007
+        },
+        {
+          "wallNs": 3417552509,
+          "cpuNs": 1367500000,
+          "rssBytes": 11920973824,
+          "pssBytes": 2488624128,
+          "sizeBytes": 240634,
+          "docsPerSec": 2.34085649860018
+        },
+        {
+          "wallNs": 3475398045,
+          "cpuNs": 1358750000,
+          "rssBytes": 11850350592,
+          "pssBytes": 2453440512,
+          "sizeBytes": 240632,
+          "docsPerSec": 2.3018946021188778
+        },
+        {
+          "wallNs": 3553029135,
+          "cpuNs": 1410000000,
+          "rssBytes": 11930284032,
+          "pssBytes": 2450151424,
+          "sizeBytes": 240620,
+          "docsPerSec": 2.251599887316995
+        },
+        {
+          "wallNs": 3557384529,
+          "cpuNs": 1403750000,
+          "rssBytes": 11867455488,
+          "pssBytes": 2467891200,
+          "sizeBytes": 240632,
+          "docsPerSec": 2.2488431977998293
+        },
+        {
+          "wallNs": 3465258564,
+          "cpuNs": 1357500000,
+          "rssBytes": 12107489280,
+          "pssBytes": 2468721664,
+          "sizeBytes": 240634,
+          "docsPerSec": 2.3086300350313484
+        }
+      ]
+    },
+    {
+      "tool": "printkit-warm",
+      "fixture": "report",
+      "parallel": 8,
+      "n": 8,
+      "docsPerSecP50": 4.174737209933668,
+      "docsPerSecP95": 4.321443514594401,
+      "wallP50Ms": 1904.313155,
+      "wallP95Ms": 2014.560345,
+      "cpuP50Ms": 888.75,
+      "cpuP95Ms": 943.75,
+      "rssP50Bytes": 3666046976,
+      "rssP95Bytes": 3844968448,
+      "pssP50Bytes": 1401563136,
+      "pssP95Bytes": 1538322432,
+      "sizeP50Bytes": 240625,
+      "samples": [
+        {
+          "wallNs": 1885248328,
+          "cpuNs": 878750000,
+          "rssBytes": 3412791296,
+          "pssBytes": 1204506624,
+          "sizeBytes": 240625,
+          "docsPerSec": 4.243472799409373
+        },
+        {
+          "wallNs": 1967685859,
+          "cpuNs": 916250000,
+          "rssBytes": 3437842432,
+          "pssBytes": 1230490624,
+          "sizeBytes": 240602,
+          "docsPerSec": 4.06568963404844
+        },
+        {
+          "wallNs": 1851233268,
+          "cpuNs": 870000000,
+          "rssBytes": 3666046976,
+          "pssBytes": 1288547328,
+          "sizeBytes": 240621,
+          "docsPerSec": 4.321443514594401
+        },
+        {
+          "wallNs": 1904313155,
+          "cpuNs": 890000000,
+          "rssBytes": 3844968448,
+          "pssBytes": 1401563136,
+          "sizeBytes": 240609,
+          "docsPerSec": 4.200989726398229
+        },
+        {
+          "wallNs": 1861784086,
+          "cpuNs": 875000000,
+          "rssBytes": 3704233984,
+          "pssBytes": 1402997760,
+          "sizeBytes": 240632,
+          "docsPerSec": 4.296953690901835
+        },
+        {
+          "wallNs": 1976154771,
+          "cpuNs": 936250000,
+          "rssBytes": 3637493760,
+          "pssBytes": 1406084096,
+          "sizeBytes": 240634,
+          "docsPerSec": 4.048265913884737
+        },
+        {
+          "wallNs": 2014560345,
+          "cpuNs": 943750000,
+          "rssBytes": 3828297728,
+          "pssBytes": 1538322432,
+          "sizeBytes": 240630,
+          "docsPerSec": 3.9710897813785766
+        },
+        {
+          "wallNs": 1916288283,
+          "cpuNs": 888750000,
+          "rssBytes": 3828117504,
+          "pssBytes": 1499986944,
+          "sizeBytes": 240631,
+          "docsPerSec": 4.174737209933668
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "css",
+      "parallel": 1,
+      "n": 8,
+      "docsPerSecP50": 3.3900599523288415,
+      "docsPerSecP95": 3.431610423544114,
+      "wallP50Ms": 294.310528,
+      "wallP95Ms": 298.359468,
+      "cpuP50Ms": 99.676,
+      "cpuP95Ms": 104.368,
+      "rssP50Bytes": 44298240,
+      "rssP95Bytes": 44748800,
+      "pssP50Bytes": 39224320,
+      "pssP95Bytes": 39749632,
+      "sizeP50Bytes": 62386,
+      "samples": [
+        {
+          "wallNs": 298359468,
+          "cpuNs": 104368000,
+          "rssBytes": 44175360,
+          "pssBytes": 38950912,
+          "sizeBytes": 62386,
+          "docsPerSec": 3.3516616942084103
+        },
+        {
+          "wallNs": 294980034,
+          "cpuNs": 100351000,
+          "rssBytes": 44298240,
+          "pssBytes": 38496256,
+          "sizeBytes": 62386,
+          "docsPerSec": 3.3900599523288415
+        },
+        {
+          "wallNs": 293442625,
+          "cpuNs": 99014000,
+          "rssBytes": 44748800,
+          "pssBytes": 39617536,
+          "sizeBytes": 62386,
+          "docsPerSec": 3.407821205252645
+        },
+        {
+          "wallNs": 298330794,
+          "cpuNs": 103628000,
+          "rssBytes": 44408832,
+          "pssBytes": 39418880,
+          "sizeBytes": 62386,
+          "docsPerSec": 3.351983838450147
+        },
+        {
+          "wallNs": 298262347,
+          "cpuNs": 103615000,
+          "rssBytes": 44335104,
+          "pssBytes": 39400448,
+          "sizeBytes": 62386,
+          "docsPerSec": 3.3527530714428395
+        },
+        {
+          "wallNs": 292809342,
+          "cpuNs": 98202000,
+          "rssBytes": 44109824,
+          "pssBytes": 39224320,
+          "sizeBytes": 62386,
+          "docsPerSec": 3.4151915822412526
+        },
+        {
+          "wallNs": 294310528,
+          "cpuNs": 99676000,
+          "rssBytes": 43810816,
+          "pssBytes": 38745088,
+          "sizeBytes": 62386,
+          "docsPerSec": 3.3977717575906765
+        },
+        {
+          "wallNs": 291408370,
+          "cpuNs": 96875000,
+          "rssBytes": 44650496,
+          "pssBytes": 39749632,
+          "sizeBytes": 62386,
+          "docsPerSec": 3.431610423544114
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "css",
+      "parallel": 1,
+      "n": 8,
+      "docsPerSecP50": 2.4493857039854525,
+      "docsPerSecP95": 2.6212754035663184,
+      "wallP50Ms": 404.868188,
+      "wallP95Ms": 432.813621,
+      "cpuP50Ms": 800,
+      "cpuP95Ms": 880,
+      "rssP50Bytes": 1485946880,
+      "rssP95Bytes": 1492815872,
+      "pssP50Bytes": 405825536,
+      "pssP95Bytes": 417777664,
+      "sizeP50Bytes": 125490,
+      "samples": [
+        {
+          "wallNs": 402458292,
+          "cpuNs": 850000000,
+          "rssBytes": 1492815872,
+          "pssBytes": 406883328,
+          "sizeBytes": 125490,
+          "docsPerSec": 2.484729523227217
+        },
+        {
+          "wallNs": 404868188,
+          "cpuNs": 800000000,
+          "rssBytes": 1480081408,
+          "pssBytes": 400155648,
+          "sizeBytes": 125490,
+          "docsPerSec": 2.469939673304241
+        },
+        {
+          "wallNs": 432813621,
+          "cpuNs": 870000000,
+          "rssBytes": 1474695168,
+          "pssBytes": 391641088,
+          "sizeBytes": 125490,
+          "docsPerSec": 2.310463329895988
+        },
+        {
+          "wallNs": 410623691,
+          "cpuNs": 850000000,
+          "rssBytes": 1485946880,
+          "pssBytes": 405825536,
+          "sizeBytes": 125490,
+          "docsPerSec": 2.435319787722623
+        },
+        {
+          "wallNs": 401373096,
+          "cpuNs": 800000000,
+          "rssBytes": 1475022848,
+          "pssBytes": 417777664,
+          "sizeBytes": 125490,
+          "docsPerSec": 2.4914475084797414
+        },
+        {
+          "wallNs": 413265033,
+          "cpuNs": 880000000,
+          "rssBytes": 1491619840,
+          "pssBytes": 410863616,
+          "sizeBytes": 125490,
+          "docsPerSec": 2.4197546856087384
+        },
+        {
+          "wallNs": 408265631,
+          "cpuNs": 800000000,
+          "rssBytes": 1490677760,
+          "pssBytes": 401388544,
+          "sizeBytes": 125490,
+          "docsPerSec": 2.4493857039854525
+        },
+        {
+          "wallNs": 381493680,
+          "cpuNs": 760000000,
+          "rssBytes": 1488261120,
+          "pssBytes": 414966784,
+          "sizeBytes": 125490,
+          "docsPerSec": 2.6212754035663184
+        }
+      ]
+    },
+    {
+      "tool": "printkit-warm",
+      "fixture": "css",
+      "parallel": 1,
+      "n": 8,
+      "docsPerSecP50": 8.298577989699854,
+      "docsPerSecP95": 8.919917595303678,
+      "wallP50Ms": 118.171263,
+      "wallP95Ms": 123.119535,
+      "cpuP50Ms": 370,
+      "cpuP95Ms": 400,
+      "rssP50Bytes": 1527242752,
+      "rssP95Bytes": 1554173952,
+      "pssP50Bytes": 493217792,
+      "pssP95Bytes": 508273664,
+      "sizeP50Bytes": 125490,
+      "samples": [
+        {
+          "wallNs": 116548493,
+          "cpuNs": 400000000,
+          "rssBytes": 1474494464,
+          "pssBytes": 437917696,
+          "sizeBytes": 125490,
+          "docsPerSec": 8.580119521579743
+        },
+        {
+          "wallNs": 123119535,
+          "cpuNs": 390000000,
+          "rssBytes": 1508306944,
+          "pssBytes": 465954816,
+          "sizeBytes": 125490,
+          "docsPerSec": 8.122187920868933
+        },
+        {
+          "wallNs": 118171263,
+          "cpuNs": 350000000,
+          "rssBytes": 1517817856,
+          "pssBytes": 469788672,
+          "sizeBytes": 125490,
+          "docsPerSec": 8.46229425507621
+        },
+        {
+          "wallNs": 114157388,
+          "cpuNs": 330000000,
+          "rssBytes": 1527242752,
+          "pssBytes": 494360576,
+          "sizeBytes": 125490,
+          "docsPerSec": 8.759836025680615
+        },
+        {
+          "wallNs": 112108659,
+          "cpuNs": 350000000,
+          "rssBytes": 1532170240,
+          "pssBytes": 493217792,
+          "sizeBytes": 125490,
+          "docsPerSec": 8.919917595303678
+        },
+        {
+          "wallNs": 121519214,
+          "cpuNs": 370000000,
+          "rssBytes": 1543565312,
+          "pssBytes": 501114880,
+          "sizeBytes": 125490,
+          "docsPerSec": 8.229151317585053
+        },
+        {
+          "wallNs": 121568835,
+          "cpuNs": 370000000,
+          "rssBytes": 1544294400,
+          "pssBytes": 495367168,
+          "sizeBytes": 125490,
+          "docsPerSec": 8.225792408062478
+        },
+        {
+          "wallNs": 120502573,
+          "cpuNs": 370000000,
+          "rssBytes": 1554173952,
+          "pssBytes": 508273664,
+          "sizeBytes": 125490,
+          "docsPerSec": 8.298577989699854
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "css",
+      "parallel": 4,
+      "n": 8,
+      "docsPerSecP50": 12.876337397162285,
+      "docsPerSecP95": 13.339546849790809,
+      "wallP50Ms": 310.210491,
+      "wallP95Ms": 353.018382,
+      "cpuP50Ms": 98.206,
+      "cpuP95Ms": 128.7775,
+      "rssP50Bytes": 175849472,
+      "rssP95Bytes": 177422336,
+      "pssP50Bytes": 79284224,
+      "pssP95Bytes": 80507904,
+      "sizeP50Bytes": 62386,
+      "samples": [
+        {
+          "wallNs": 310210491,
+          "cpuNs": 97547500,
+          "rssBytes": 176054272,
+          "pssBytes": 78966784,
+          "sizeBytes": 62386,
+          "docsPerSec": 12.894470419441747
+        },
+        {
+          "wallNs": 322339246,
+          "cpuNs": 108321750,
+          "rssBytes": 177422336,
+          "pssBytes": 80244736,
+          "sizeBytes": 62386,
+          "docsPerSec": 12.409286333070344
+        },
+        {
+          "wallNs": 302129302,
+          "cpuNs": 99087000,
+          "rssBytes": 176799744,
+          "pssBytes": 79600640,
+          "sizeBytes": 62386,
+          "docsPerSec": 13.239364647921505
+        },
+        {
+          "wallNs": 310647343,
+          "cpuNs": 98206000,
+          "rssBytes": 175849472,
+          "pssBytes": 79355904,
+          "sizeBytes": 62386,
+          "docsPerSec": 12.876337397162285
+        },
+        {
+          "wallNs": 299860261,
+          "cpuNs": 96877500,
+          "rssBytes": 176861184,
+          "pssBytes": 80507904,
+          "sizeBytes": 62386,
+          "docsPerSec": 13.339546849790809
+        },
+        {
+          "wallNs": 300213788,
+          "cpuNs": 98004500,
+          "rssBytes": 175779840,
+          "pssBytes": 79284224,
+          "sizeBytes": 62386,
+          "docsPerSec": 13.323838410779455
+        },
+        {
+          "wallNs": 337908525,
+          "cpuNs": 115739750,
+          "rssBytes": 174714880,
+          "pssBytes": 77065216,
+          "sizeBytes": 62386,
+          "docsPerSec": 11.83752318767335
+        },
+        {
+          "wallNs": 353018382,
+          "cpuNs": 128777500,
+          "rssBytes": 173965312,
+          "pssBytes": 73495552,
+          "sizeBytes": 62386,
+          "docsPerSec": 11.330854720194145
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "css",
+      "parallel": 4,
+      "n": 8,
+      "docsPerSecP50": 3.5759086837435317,
+      "docsPerSecP95": 3.7188807936766963,
+      "wallP50Ms": 1110.771518,
+      "wallP95Ms": 1148.496996,
+      "cpuP50Ms": 765,
+      "cpuP95Ms": 807.5,
+      "rssP50Bytes": 5530456064,
+      "rssP95Bytes": 5689282560,
+      "pssP50Bytes": 977350656,
+      "pssP95Bytes": 1204852736,
+      "sizeP50Bytes": 125490,
+      "samples": [
+        {
+          "wallNs": 1148496996,
+          "cpuNs": 787500000,
+          "rssBytes": 5689282560,
+          "pssBytes": 977350656,
+          "sizeBytes": 125490,
+          "docsPerSec": 3.4828127665385726
+        },
+        {
+          "wallNs": 1118596797,
+          "cpuNs": 747500000,
+          "rssBytes": 5166882816,
+          "pssBytes": 997493760,
+          "sizeBytes": 125490,
+          "docsPerSec": 3.5759086837435317
+        },
+        {
+          "wallNs": 1105609825,
+          "cpuNs": 780000000,
+          "rssBytes": 5530456064,
+          "pssBytes": 986881024,
+          "sizeBytes": 125490,
+          "docsPerSec": 3.6179128563731786
+        },
+        {
+          "wallNs": 1127127445,
+          "cpuNs": 737500000,
+          "rssBytes": 5590614016,
+          "pssBytes": 925658112,
+          "sizeBytes": 125490,
+          "docsPerSec": 3.5488444698460877
+        },
+        {
+          "wallNs": 1092559747,
+          "cpuNs": 775000000,
+          "rssBytes": 5627940864,
+          "pssBytes": 932418560,
+          "sizeBytes": 125490,
+          "docsPerSec": 3.6611270102009352
+        },
+        {
+          "wallNs": 1140059162,
+          "cpuNs": 807500000,
+          "rssBytes": 5106384896,
+          "pssBytes": 931587072,
+          "sizeBytes": 125490,
+          "docsPerSec": 3.5085898463223786
+        },
+        {
+          "wallNs": 1110771518,
+          "cpuNs": 750000000,
+          "rssBytes": 5665771520,
+          "pssBytes": 1204852736,
+          "sizeBytes": 125490,
+          "docsPerSec": 3.601100618066082
+        },
+        {
+          "wallNs": 1075592422,
+          "cpuNs": 765000000,
+          "rssBytes": 5149212672,
+          "pssBytes": 1014396928,
+          "sizeBytes": 125490,
+          "docsPerSec": 3.7188807936766963
+        }
+      ]
+    },
+    {
+      "tool": "printkit-warm",
+      "fixture": "css",
+      "parallel": 4,
+      "n": 8,
+      "docsPerSecP50": 9.834416043943042,
+      "docsPerSecP95": 10.38758165444218,
+      "wallP50Ms": 401.643256,
+      "wallP95Ms": 433.892158,
+      "cpuP50Ms": 352.5,
+      "cpuP95Ms": 390,
+      "rssP50Bytes": 2239066112,
+      "rssP95Bytes": 2423296000,
+      "pssP50Bytes": 709856256,
+      "pssP95Bytes": 824308736,
+      "sizeP50Bytes": 125490,
+      "samples": [
+        {
+          "wallNs": 398889563,
+          "cpuNs": 342500000,
+          "rssBytes": 2239066112,
+          "pssBytes": 616923136,
+          "sizeBytes": 125490,
+          "docsPerSec": 10.027838206436101
+        },
+        {
+          "wallNs": 433892158,
+          "cpuNs": 372500000,
+          "rssBytes": 2228719616,
+          "pssBytes": 709856256,
+          "sizeBytes": 125490,
+          "docsPerSec": 9.218880604889845
+        },
+        {
+          "wallNs": 394347530,
+          "cpuNs": 332500000,
+          "rssBytes": 2211495936,
+          "pssBytes": 668882944,
+          "sizeBytes": 125490,
+          "docsPerSec": 10.143337274104391
+        },
+        {
+          "wallNs": 401643256,
+          "cpuNs": 352500000,
+          "rssBytes": 2221948928,
+          "pssBytes": 706019328,
+          "sizeBytes": 125490,
+          "docsPerSec": 9.959086677656053
+        },
+        {
+          "wallNs": 406734877,
+          "cpuNs": 365000000,
+          "rssBytes": 2411446272,
+          "pssBytes": 762754048,
+          "sizeBytes": 125490,
+          "docsPerSec": 9.834416043943042
+        },
+        {
+          "wallNs": 419200412,
+          "cpuNs": 390000000,
+          "rssBytes": 2376859648,
+          "pssBytes": 785115136,
+          "sizeBytes": 125490,
+          "docsPerSec": 9.541975354737962
+        },
+        {
+          "wallNs": 427148546,
+          "cpuNs": 372500000,
+          "rssBytes": 2401677312,
+          "pssBytes": 784121856,
+          "sizeBytes": 125490,
+          "docsPerSec": 9.36442377589177
+        },
+        {
+          "wallNs": 385075192,
+          "cpuNs": 342500000,
+          "rssBytes": 2423296000,
+          "pssBytes": 824308736,
+          "sizeBytes": 125490,
+          "docsPerSec": 10.38758165444218
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "css",
+      "parallel": 8,
+      "n": 8,
+      "docsPerSecP50": 19.758215554939714,
+      "docsPerSecP95": 20.36603601589889,
+      "wallP50Ms": 402.897893,
+      "wallP95Ms": 425.869751,
+      "cpuP50Ms": 99.467,
+      "cpuP95Ms": 110.149125,
+      "rssP50Bytes": 353034240,
+      "rssP95Bytes": 353759232,
+      "pssP50Bytes": 123444224,
+      "pssP95Bytes": 129401856,
+      "sizeP50Bytes": 62386,
+      "samples": [
+        {
+          "wallNs": 404894864,
+          "cpuNs": 99868125,
+          "rssBytes": 345391104,
+          "pssBytes": 120818688,
+          "sizeBytes": 62386,
+          "docsPerSec": 19.758215554939714
+        },
+        {
+          "wallNs": 397040031,
+          "cpuNs": 97146375,
+          "rssBytes": 353423360,
+          "pssBytes": 129401856,
+          "sizeBytes": 62386,
+          "docsPerSec": 20.149101791703213
+        },
+        {
+          "wallNs": 392810854,
+          "cpuNs": 98803125,
+          "rssBytes": 350416896,
+          "pssBytes": 123444224,
+          "sizeBytes": 62386,
+          "docsPerSec": 20.36603601589889
+        },
+        {
+          "wallNs": 423640230,
+          "cpuNs": 110149125,
+          "rssBytes": 353759232,
+          "pssBytes": 123547648,
+          "sizeBytes": 62386,
+          "docsPerSec": 18.883947825257295
+        },
+        {
+          "wallNs": 402897893,
+          "cpuNs": 99467000,
+          "rssBytes": 349880320,
+          "pssBytes": 128195584,
+          "sizeBytes": 62386,
+          "docsPerSec": 19.856147522717375
+        },
+        {
+          "wallNs": 412643968,
+          "cpuNs": 103583500,
+          "rssBytes": 353034240,
+          "pssBytes": 121106432,
+          "sizeBytes": 62386,
+          "docsPerSec": 19.387173012062544
+        },
+        {
+          "wallNs": 395449422,
+          "cpuNs": 98731000,
+          "rssBytes": 353665024,
+          "pssBytes": 122338304,
+          "sizeBytes": 62386,
+          "docsPerSec": 20.23014715646746
+        },
+        {
+          "wallNs": 425869751,
+          "cpuNs": 108734375,
+          "rssBytes": 353038336,
+          "pssBytes": 125624320,
+          "sizeBytes": 62386,
+          "docsPerSec": 18.78508624107468
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "css",
+      "parallel": 8,
+      "n": 8,
+      "docsPerSecP50": 3.7203420828130715,
+      "docsPerSecP95": 3.792167515670482,
+      "wallP50Ms": 2132.081097,
+      "wallP95Ms": 2166.013703,
+      "cpuP50Ms": 718.75,
+      "cpuP95Ms": 762.5,
+      "rssP50Bytes": 9885229056,
+      "rssP95Bytes": 11290554368,
+      "pssP50Bytes": 1415997440,
+      "pssP95Bytes": 1739070464,
+      "sizeP50Bytes": 125490,
+      "samples": [
+        {
+          "wallNs": 2166013703,
+          "cpuNs": 762500000,
+          "rssBytes": 11164012544,
+          "pssBytes": 1169238016,
+          "sizeBytes": 125490,
+          "docsPerSec": 3.693420770570259
+        },
+        {
+          "wallNs": 2157888286,
+          "cpuNs": 718750000,
+          "rssBytes": 11290554368,
+          "pssBytes": 958296064,
+          "sizeBytes": 125490,
+          "docsPerSec": 3.7073281559117746
+        },
+        {
+          "wallNs": 2150339894,
+          "cpuNs": 746250000,
+          "rssBytes": 9885229056,
+          "pssBytes": 1707544576,
+          "sizeBytes": 125490,
+          "docsPerSec": 3.7203420828130715
+        },
+        {
+          "wallNs": 2123355203,
+          "cpuNs": 656250000,
+          "rssBytes": 9488224256,
+          "pssBytes": 1739070464,
+          "sizeBytes": 125490,
+          "docsPerSec": 3.7676221051932965
+        },
+        {
+          "wallNs": 2153044057,
+          "cpuNs": 756250000,
+          "rssBytes": 9022218240,
+          "pssBytes": 1500704768,
+          "sizeBytes": 125490,
+          "docsPerSec": 3.715669437413654
+        },
+        {
+          "wallNs": 2121351476,
+          "cpuNs": 720000000,
+          "rssBytes": 10361606144,
+          "pssBytes": 1415997440,
+          "sizeBytes": 125490,
+          "docsPerSec": 3.7711808205798705
+        },
+        {
+          "wallNs": 2132081097,
+          "cpuNs": 666589500,
+          "rssBytes": 9131819008,
+          "pssBytes": 1593083904,
+          "sizeBytes": 125490,
+          "docsPerSec": 3.7522024895097132
+        },
+        {
+          "wallNs": 2109611447,
+          "cpuNs": 661250000,
+          "rssBytes": 10663063552,
+          "pssBytes": 1261170688,
+          "sizeBytes": 125490,
+          "docsPerSec": 3.792167515670482
+        }
+      ]
+    },
+    {
+      "tool": "printkit-warm",
+      "fixture": "css",
+      "parallel": 8,
+      "n": 8,
+      "docsPerSecP50": 10.381822984189949,
+      "docsPerSecP95": 10.7491990600465,
+      "wallP50Ms": 767.254699,
+      "wallP95Ms": 837.344915,
+      "cpuP50Ms": 338.75,
+      "cpuP95Ms": 371.25,
+      "rssP50Bytes": 3189702656,
+      "rssP95Bytes": 3434549248,
+      "pssP50Bytes": 949941248,
+      "pssP95Bytes": 1113776128,
+      "sizeP50Bytes": 125490,
+      "samples": [
+        {
+          "wallNs": 749407579,
+          "cpuNs": 325000000,
+          "rssBytes": 3197857792,
+          "pssBytes": 828156928,
+          "sizeBytes": 125490,
+          "docsPerSec": 10.67509887033048
+        },
+        {
+          "wallNs": 770577577,
+          "cpuNs": 342500000,
+          "rssBytes": 2922831872,
+          "pssBytes": 888530944,
+          "sizeBytes": 125490,
+          "docsPerSec": 10.381822984189949
+        },
+        {
+          "wallNs": 787501989,
+          "cpuNs": 347500000,
+          "rssBytes": 3010195456,
+          "pssBytes": 874016768,
+          "sizeBytes": 125490,
+          "docsPerSec": 10.158704500745076
+        },
+        {
+          "wallNs": 802549647,
+          "cpuNs": 355000000,
+          "rssBytes": 2901823488,
+          "pssBytes": 949941248,
+          "sizeBytes": 125490,
+          "docsPerSec": 9.968230663242695
+        },
+        {
+          "wallNs": 744241497,
+          "cpuNs": 330000000,
+          "rssBytes": 3189702656,
+          "pssBytes": 990280704,
+          "sizeBytes": 125490,
+          "docsPerSec": 10.7491990600465
+        },
+        {
+          "wallNs": 764104930,
+          "cpuNs": 338750000,
+          "rssBytes": 3389005824,
+          "pssBytes": 1113776128,
+          "sizeBytes": 125490,
+          "docsPerSec": 10.469766240089564
+        },
+        {
+          "wallNs": 837344915,
+          "cpuNs": 371250000,
+          "rssBytes": 3262595072,
+          "pssBytes": 1053829120,
+          "sizeBytes": 125490,
+          "docsPerSec": 9.55400798009265
+        },
+        {
+          "wallNs": 767254699,
+          "cpuNs": 338750000,
+          "rssBytes": 3434549248,
+          "pssBytes": 1080423424,
+          "sizeBytes": 125490,
+          "docsPerSec": 10.426785277987591
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "images",
+      "parallel": 1,
+      "n": 8,
+      "docsPerSecP50": 1.0271781909559365,
+      "docsPerSecP95": 1.0338506502121423,
+      "wallP50Ms": 972.930154,
+      "wallP95Ms": 990.492737,
+      "cpuP50Ms": 771.951,
+      "cpuP95Ms": 786.455,
+      "rssP50Bytes": 85483520,
+      "rssP95Bytes": 85921792,
+      "pssP50Bytes": 80089088,
+      "pssP95Bytes": 80707584,
+      "sizeP50Bytes": 3948007,
+      "samples": [
+        {
+          "wallNs": 968582718,
+          "cpuNs": 767578000,
+          "rssBytes": 85331968,
+          "pssBytes": 75481088,
+          "sizeBytes": 3948007,
+          "docsPerSec": 1.032436343758923
+        },
+        {
+          "wallNs": 970617727,
+          "cpuNs": 769419000,
+          "rssBytes": 85921792,
+          "pssBytes": 76100608,
+          "sizeBytes": 3948007,
+          "docsPerSec": 1.0302717250907987
+        },
+        {
+          "wallNs": 973540919,
+          "cpuNs": 772648000,
+          "rssBytes": 85618688,
+          "pssBytes": 80707584,
+          "sizeBytes": 3948007,
+          "docsPerSec": 1.0271781909559365
+        },
+        {
+          "wallNs": 967257698,
+          "cpuNs": 766004000,
+          "rssBytes": 85483520,
+          "pssBytes": 75859968,
+          "sizeBytes": 3948007,
+          "docsPerSec": 1.0338506502121423
+        },
+        {
+          "wallNs": 972930154,
+          "cpuNs": 771951000,
+          "rssBytes": 85458944,
+          "pssBytes": 80592896,
+          "sizeBytes": 3948007,
+          "docsPerSec": 1.0278230106125377
+        },
+        {
+          "wallNs": 987358267,
+          "cpuNs": 786455000,
+          "rssBytes": 85872640,
+          "pssBytes": 80470016,
+          "sizeBytes": 3948007,
+          "docsPerSec": 1.0128035925990784
+        },
+        {
+          "wallNs": 990492737,
+          "cpuNs": 783983000,
+          "rssBytes": 85528576,
+          "pssBytes": 80089088,
+          "sizeBytes": 3948007,
+          "docsPerSec": 1.0095985186411316
+        },
+        {
+          "wallNs": 974809601,
+          "cpuNs": 773676000,
+          "rssBytes": 85291008,
+          "pssBytes": 80432128,
+          "sizeBytes": 3948007,
+          "docsPerSec": 1.025841352992583
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "images",
+      "parallel": 1,
+      "n": 8,
+      "docsPerSecP50": 2.1204459212106292,
+      "docsPerSecP95": 2.289903306588774,
+      "wallP50Ms": 463.9315,
+      "wallP95Ms": 495.933439,
+      "cpuP50Ms": 970,
+      "cpuP95Ms": 1040,
+      "rssP50Bytes": 1473765376,
+      "rssP95Bytes": 1489289216,
+      "pssP50Bytes": 463100928,
+      "pssP95Bytes": 481762304,
+      "sizeP50Bytes": 3954215,
+      "samples": [
+        {
+          "wallNs": 472929014,
+          "cpuNs": 970000000,
+          "rssBytes": 1473765376,
+          "pssBytes": 478205952,
+          "sizeBytes": 3954215,
+          "docsPerSec": 2.114482238131408
+        },
+        {
+          "wallNs": 495933439,
+          "cpuNs": 1040000000,
+          "rssBytes": 1476935680,
+          "pssBytes": 474384384,
+          "sizeBytes": 3954215,
+          "docsPerSec": 2.016399624143917
+        },
+        {
+          "wallNs": 436699662,
+          "cpuNs": 910000000,
+          "rssBytes": 1471758336,
+          "pssBytes": 460510208,
+          "sizeBytes": 3954215,
+          "docsPerSec": 2.289903306588774
+        },
+        {
+          "wallNs": 460813961,
+          "cpuNs": 930000000,
+          "rssBytes": 1473339392,
+          "pssBytes": 454263808,
+          "sizeBytes": 3954215,
+          "docsPerSec": 2.1700731415123076
+        },
+        {
+          "wallNs": 471598917,
+          "cpuNs": 970000000,
+          "rssBytes": 1461686272,
+          "pssBytes": 481762304,
+          "sizeBytes": 3954215,
+          "docsPerSec": 2.1204459212106292
+        },
+        {
+          "wallNs": 471870832,
+          "cpuNs": 990000000,
+          "rssBytes": 1482641408,
+          "pssBytes": 480151552,
+          "sizeBytes": 3954215,
+          "docsPerSec": 2.1192240167961898
+        },
+        {
+          "wallNs": 447857078,
+          "cpuNs": 970000000,
+          "rssBytes": 1481220096,
+          "pssBytes": 463100928,
+          "sizeBytes": 3954215,
+          "docsPerSec": 2.232855187788279
+        },
+        {
+          "wallNs": 463931500,
+          "cpuNs": 970000000,
+          "rssBytes": 1489289216,
+          "pssBytes": 460235776,
+          "sizeBytes": 3954215,
+          "docsPerSec": 2.1554906273878793
+        }
+      ]
+    },
+    {
+      "tool": "printkit-warm",
+      "fixture": "images",
+      "parallel": 1,
+      "n": 8,
+      "docsPerSecP50": 5.90815695569593,
+      "docsPerSecP95": 6.183742283586273,
+      "wallP50Ms": 168.121573,
+      "wallP95Ms": 174.426979,
+      "cpuP50Ms": 470,
+      "cpuP95Ms": 540,
+      "rssP50Bytes": 1575608320,
+      "rssP95Bytes": 1629605888,
+      "pssP50Bytes": 583328768,
+      "pssP95Bytes": 629651456,
+      "sizeP50Bytes": 3954215,
+      "samples": [
+        {
+          "wallNs": 168121573,
+          "cpuNs": 470000000,
+          "rssBytes": 1512624128,
+          "pssBytes": 545264640,
+          "sizeBytes": 3954215,
+          "docsPerSec": 5.948076633805942
+        },
+        {
+          "wallNs": 174426979,
+          "cpuNs": 480000000,
+          "rssBytes": 1561563136,
+          "pssBytes": 576075776,
+          "sizeBytes": 3954215,
+          "docsPerSec": 5.733058072398307
+        },
+        {
+          "wallNs": 173742401,
+          "cpuNs": 540000000,
+          "rssBytes": 1567629312,
+          "pssBytes": 581750784,
+          "sizeBytes": 3954215,
+          "docsPerSec": 5.755647408141897
+        },
+        {
+          "wallNs": 162749835,
+          "cpuNs": 440000000,
+          "rssBytes": 1580269568,
+          "pssBytes": 583328768,
+          "sizeBytes": 3954215,
+          "docsPerSec": 6.14439947051252
+        },
+        {
+          "wallNs": 161714372,
+          "cpuNs": 460000000,
+          "rssBytes": 1575608320,
+          "pssBytes": 603036672,
+          "sizeBytes": 3954215,
+          "docsPerSec": 6.183742283586273
+        },
+        {
+          "wallNs": 162756132,
+          "cpuNs": 440000000,
+          "rssBytes": 1610776576,
+          "pssBytes": 608804864,
+          "sizeBytes": 3954215,
+          "docsPerSec": 6.144161745008784
+        },
+        {
+          "wallNs": 170174668,
+          "cpuNs": 470000000,
+          "rssBytes": 1610477568,
+          "pssBytes": 610155520,
+          "sizeBytes": 3954215,
+          "docsPerSec": 5.876315269203287
+        },
+        {
+          "wallNs": 169257521,
+          "cpuNs": 520000000,
+          "rssBytes": 1629605888,
+          "pssBytes": 629651456,
+          "sizeBytes": 3954215,
+          "docsPerSec": 5.90815695569593
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "images",
+      "parallel": 4,
+      "n": 8,
+      "docsPerSecP50": 3.8595641355433106,
+      "docsPerSecP95": 3.8866035794793063,
+      "wallP50Ms": 1036.160917,
+      "wallP95Ms": 1071.953936,
+      "cpuP50Ms": 776.85275,
+      "cpuP95Ms": 801.89225,
+      "rssP50Bytes": 338022400,
+      "rssP95Bytes": 340762624,
+      "pssP50Bytes": 240808960,
+      "pssP95Bytes": 242073600,
+      "sizeP50Bytes": 3948007,
+      "samples": [
+        {
+          "wallNs": 1031213890,
+          "cpuNs": 780856500,
+          "rssBytes": 339718144,
+          "pssBytes": 240808960,
+          "sizeBytes": 3948007,
+          "docsPerSec": 3.878923702239891
+        },
+        {
+          "wallNs": 1071953936,
+          "cpuNs": 801892250,
+          "rssBytes": 340316160,
+          "pssBytes": 235779072,
+          "sizeBytes": 3948007,
+          "docsPerSec": 3.7315036268498765
+        },
+        {
+          "wallNs": 1036160917,
+          "cpuNs": 776852750,
+          "rssBytes": 340762624,
+          "pssBytes": 241613824,
+          "sizeBytes": 3948007,
+          "docsPerSec": 3.8604042425970024
+        },
+        {
+          "wallNs": 1036004038,
+          "cpuNs": 776155000,
+          "rssBytes": 338022400,
+          "pssBytes": 242073600,
+          "sizeBytes": 3948007,
+          "docsPerSec": 3.8609888120918696
+        },
+        {
+          "wallNs": 1036386457,
+          "cpuNs": 781554500,
+          "rssBytes": 338010112,
+          "pssBytes": 239798272,
+          "sizeBytes": 3948007,
+          "docsPerSec": 3.8595641355433106
+        },
+        {
+          "wallNs": 1041379983,
+          "cpuNs": 775526000,
+          "rssBytes": 337100800,
+          "pssBytes": 241443840,
+          "sizeBytes": 3948007,
+          "docsPerSec": 3.8410571216059184
+        },
+        {
+          "wallNs": 1029176225,
+          "cpuNs": 772778750,
+          "rssBytes": 339075072,
+          "pssBytes": 241748992,
+          "sizeBytes": 3948007,
+          "docsPerSec": 3.8866035794793063
+        },
+        {
+          "wallNs": 1046462226,
+          "cpuNs": 780327250,
+          "rssBytes": 335155200,
+          "pssBytes": 239549440,
+          "sizeBytes": 3948007,
+          "docsPerSec": 3.8224026635816664
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "images",
+      "parallel": 4,
+      "n": 8,
+      "docsPerSecP50": 3.030499911780632,
+      "docsPerSecP95": 3.173576449579103,
+      "wallP50Ms": 1316.833985,
+      "wallP95Ms": 1383.207396,
+      "cpuP50Ms": 917.5,
+      "cpuP95Ms": 1002.5,
+      "rssP50Bytes": 5697818624,
+      "rssP95Bytes": 5747740672,
+      "pssP50Bytes": 1132732416,
+      "pssP95Bytes": 1206721536,
+      "sizeP50Bytes": 3954215,
+      "samples": [
+        {
+          "wallNs": 1260407639,
+          "cpuNs": 887500000,
+          "rssBytes": 5665669120,
+          "pssBytes": 1103030272,
+          "sizeBytes": 3954215,
+          "docsPerSec": 3.173576449579103
+        },
+        {
+          "wallNs": 1321019885,
+          "cpuNs": 917500000,
+          "rssBytes": 5705723904,
+          "pssBytes": 1132732416,
+          "sizeBytes": 3954215,
+          "docsPerSec": 3.0279635041224227
+        },
+        {
+          "wallNs": 1290650651,
+          "cpuNs": 887500000,
+          "rssBytes": 5697818624,
+          "pssBytes": 1104719872,
+          "sizeBytes": 3954215,
+          "docsPerSec": 3.099212011322187
+        },
+        {
+          "wallNs": 1290265597,
+          "cpuNs": 917500000,
+          "rssBytes": 5701922816,
+          "pssBytes": 1196078080,
+          "sizeBytes": 3954215,
+          "docsPerSec": 3.1001369092537314
+        },
+        {
+          "wallNs": 1319914244,
+          "cpuNs": 950000000,
+          "rssBytes": 5747740672,
+          "pssBytes": 1204185088,
+          "sizeBytes": 3954215,
+          "docsPerSec": 3.030499911780632
+        },
+        {
+          "wallNs": 1335098644,
+          "cpuNs": 975000000,
+          "rssBytes": 5719031808,
+          "pssBytes": 1115913216,
+          "sizeBytes": 3954215,
+          "docsPerSec": 2.996033302839607
+        },
+        {
+          "wallNs": 1383207396,
+          "cpuNs": 1002500000,
+          "rssBytes": 5601976320,
+          "pssBytes": 1206721536,
+          "sizeBytes": 3954215,
+          "docsPerSec": 2.89182953443375
+        },
+        {
+          "wallNs": 1316833985,
+          "cpuNs": 947500000,
+          "rssBytes": 5685379072,
+          "pssBytes": 1191347200,
+          "sizeBytes": 3954215,
+          "docsPerSec": 3.037588675234563
+        }
+      ]
+    },
+    {
+      "tool": "printkit-warm",
+      "fixture": "images",
+      "parallel": 4,
+      "n": 8,
+      "docsPerSecP50": 7.523474288363925,
+      "docsPerSecP95": 7.780992481853334,
+      "wallP50Ms": 529.948899,
+      "wallP95Ms": 572.875897,
+      "cpuP50Ms": 437.5,
+      "cpuP95Ms": 485,
+      "rssP50Bytes": 2382422016,
+      "rssP95Bytes": 2420666368,
+      "pssP50Bytes": 823732224,
+      "pssP95Bytes": 930932736,
+      "sizeP50Bytes": 3954215,
+      "samples": [
+        {
+          "wallNs": 524091641,
+          "cpuNs": 427500000,
+          "rssBytes": 2207899648,
+          "pssBytes": 727218176,
+          "sizeBytes": 3954215,
+          "docsPerSec": 7.632253001341038
+        },
+        {
+          "wallNs": 531669259,
+          "cpuNs": 427500000,
+          "rssBytes": 2168156160,
+          "pssBytes": 779312128,
+          "sizeBytes": 3954215,
+          "docsPerSec": 7.523474288363925
+        },
+        {
+          "wallNs": 566664735,
+          "cpuNs": 480000000,
+          "rssBytes": 2327228416,
+          "pssBytes": 802398208,
+          "sizeBytes": 3954215,
+          "docsPerSec": 7.058847591777526
+        },
+        {
+          "wallNs": 516740511,
+          "cpuNs": 437500000,
+          "rssBytes": 2382422016,
+          "pssBytes": 823732224,
+          "sizeBytes": 3954215,
+          "docsPerSec": 7.740829129613181
+        },
+        {
+          "wallNs": 572875897,
+          "cpuNs": 485000000,
+          "rssBytes": 2406748160,
+          "pssBytes": 918188032,
+          "sizeBytes": 3954215,
+          "docsPerSec": 6.982315054529167
+        },
+        {
+          "wallNs": 529948899,
+          "cpuNs": 440000000,
+          "rssBytes": 2420666368,
+          "pssBytes": 923277312,
+          "sizeBytes": 3954215,
+          "docsPerSec": 7.547897556817078
+        },
+        {
+          "wallNs": 537046103,
+          "cpuNs": 440000000,
+          "rssBytes": 2412707840,
+          "pssBytes": 899181568,
+          "sizeBytes": 3954215,
+          "docsPerSec": 7.448150126507854
+        },
+        {
+          "wallNs": 514073238,
+          "cpuNs": 422500000,
+          "rssBytes": 2409226240,
+          "pssBytes": 930932736,
+          "sizeBytes": 3954215,
+          "docsPerSec": 7.780992481853334
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "images",
+      "parallel": 8,
+      "n": 8,
+      "docsPerSecP50": 4.180082720534774,
+      "docsPerSecP95": 4.285020915002295,
+      "wallP50Ms": 1906.362406,
+      "wallP95Ms": 1938.577321,
+      "cpuP50Ms": 779.311,
+      "cpuP95Ms": 788.136625,
+      "rssP50Bytes": 601931776,
+      "rssP95Bytes": 611479552,
+      "pssP50Bytes": 379076608,
+      "pssP95Bytes": 387656704,
+      "sizeP50Bytes": 3948007,
+      "samples": [
+        {
+          "wallNs": 1866968717,
+          "cpuNs": 774634125,
+          "rssBytes": 596484096,
+          "pssBytes": 372319232,
+          "sizeBytes": 3948007,
+          "docsPerSec": 4.285020915002295
+        },
+        {
+          "wallNs": 1913837724,
+          "cpuNs": 785550375,
+          "rssBytes": 606289920,
+          "pssBytes": 379076608,
+          "sizeBytes": 3948007,
+          "docsPerSec": 4.180082720534774
+        },
+        {
+          "wallNs": 1890053200,
+          "cpuNs": 774390500,
+          "rssBytes": 609652736,
+          "pssBytes": 387656704,
+          "sizeBytes": 3948007,
+          "docsPerSec": 4.232685090557239
+        },
+        {
+          "wallNs": 1938577321,
+          "cpuNs": 781362875,
+          "rssBytes": 611479552,
+          "pssBytes": 382776320,
+          "sizeBytes": 3948007,
+          "docsPerSec": 4.1267376407113145
+        },
+        {
+          "wallNs": 1905906344,
+          "cpuNs": 788136625,
+          "rssBytes": 601931776,
+          "pssBytes": 379805696,
+          "sizeBytes": 3948007,
+          "docsPerSec": 4.197478026758696
+        },
+        {
+          "wallNs": 1925816697,
+          "cpuNs": 777685625,
+          "rssBytes": 605556736,
+          "pssBytes": 382989312,
+          "sizeBytes": 3948007,
+          "docsPerSec": 4.154081752672643
+        },
+        {
+          "wallNs": 1922444131,
+          "cpuNs": 779311000,
+          "rssBytes": 593784832,
+          "pssBytes": 368570368,
+          "sizeBytes": 3948007,
+          "docsPerSec": 4.161369306393643
+        },
+        {
+          "wallNs": 1906362406,
+          "cpuNs": 779366750,
+          "rssBytes": 600145920,
+          "pssBytes": 369383424,
+          "sizeBytes": 3948007,
+          "docsPerSec": 4.196473857657472
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "images",
+      "parallel": 8,
+      "n": 8,
+      "docsPerSecP50": 3.2101890875166768,
+      "docsPerSecP95": 3.2770113904516545,
+      "wallP50Ms": 2488.685611,
+      "wallP95Ms": 2512.385128,
+      "cpuP50Ms": 888.75,
+      "cpuP95Ms": 928.75,
+      "rssP50Bytes": 10288529408,
+      "rssP95Bytes": 11294756864,
+      "pssP50Bytes": 1851128832,
+      "pssP95Bytes": 2077985792,
+      "sizeP50Bytes": 3954215,
+      "samples": [
+        {
+          "wallNs": 2488685611,
+          "cpuNs": 893750000,
+          "rssBytes": 10888028160,
+          "pssBytes": 2077985792,
+          "sizeBytes": 3954215,
+          "docsPerSec": 3.2145482597882067
+        },
+        {
+          "wallNs": 2466090735,
+          "cpuNs": 885000000,
+          "rssBytes": 11069808640,
+          "pssBytes": 1233251328,
+          "sizeBytes": 3954215,
+          "docsPerSec": 3.244000671370269
+        },
+        {
+          "wallNs": 2512385128,
+          "cpuNs": 916250000,
+          "rssBytes": 11122188288,
+          "pssBytes": 2075237376,
+          "sizeBytes": 3954215,
+          "docsPerSec": 3.1842251853992027
+        },
+        {
+          "wallNs": 2441248762,
+          "cpuNs": 903750000,
+          "rssBytes": 9583882240,
+          "pssBytes": 1710246912,
+          "sizeBytes": 3954215,
+          "docsPerSec": 3.2770113904516545
+        },
+        {
+          "wallNs": 2507272434,
+          "cpuNs": 885000000,
+          "rssBytes": 10288529408,
+          "pssBytes": 1917776896,
+          "sizeBytes": 3954215,
+          "docsPerSec": 3.1907182847446407
+        },
+        {
+          "wallNs": 2469418993,
+          "cpuNs": 888750000,
+          "rssBytes": 11294756864,
+          "pssBytes": 1827307520,
+          "sizeBytes": 3954215,
+          "docsPerSec": 3.2396284400004207
+        },
+        {
+          "wallNs": 2510710904,
+          "cpuNs": 841250000,
+          "rssBytes": 10263764992,
+          "pssBytes": 1851128832,
+          "sizeBytes": 3954215,
+          "docsPerSec": 3.1863485307108066
+        },
+        {
+          "wallNs": 2492065041,
+          "cpuNs": 928750000,
+          "rssBytes": 10121924608,
+          "pssBytes": 1872870400,
+          "sizeBytes": 3954215,
+          "docsPerSec": 3.2101890875166768
+        }
+      ]
+    },
+    {
+      "tool": "printkit-warm",
+      "fixture": "images",
+      "parallel": 8,
+      "n": 8,
+      "docsPerSecP50": 7.421403149869293,
+      "docsPerSecP95": 7.992900306302926,
+      "wallP50Ms": 1053.825398,
+      "wallP95Ms": 1139.75941,
+      "cpuP50Ms": 448.75,
+      "cpuP95Ms": 477.5,
+      "rssP50Bytes": 3273830400,
+      "rssP95Bytes": 3508686848,
+      "pssP50Bytes": 1215978496,
+      "pssP95Bytes": 1249682432,
+      "sizeP50Bytes": 3954215,
+      "samples": [
+        {
+          "wallNs": 1000888250,
+          "cpuNs": 420000000,
+          "rssBytes": 3273830400,
+          "pssBytes": 1021095936,
+          "sizeBytes": 3954215,
+          "docsPerSec": 7.992900306302926
+        },
+        {
+          "wallNs": 1139759410,
+          "cpuNs": 477500000,
+          "rssBytes": 3341840384,
+          "pssBytes": 1139596288,
+          "sizeBytes": 3954215,
+          "docsPerSec": 7.0190251818144676
+        },
+        {
+          "wallNs": 1041806270,
+          "cpuNs": 438750000,
+          "rssBytes": 3235717120,
+          "pssBytes": 1155217408,
+          "sizeBytes": 3954215,
+          "docsPerSec": 7.678970870467118
+        },
+        {
+          "wallNs": 1082424474,
+          "cpuNs": 460000000,
+          "rssBytes": 3354865664,
+          "pssBytes": 1249682432,
+          "sizeBytes": 3954215,
+          "docsPerSec": 7.3908158880006996
+        },
+        {
+          "wallNs": 1098795863,
+          "cpuNs": 468750000,
+          "rssBytes": 3508686848,
+          "pssBytes": 1240562688,
+          "sizeBytes": 3954215,
+          "docsPerSec": 7.280697233567942
+        },
+        {
+          "wallNs": 1026067345,
+          "cpuNs": 437500000,
+          "rssBytes": 3170091008,
+          "pssBytes": 1215978496,
+          "sizeBytes": 3954215,
+          "docsPerSec": 7.7967591883552245
+        },
+        {
+          "wallNs": 1053825398,
+          "cpuNs": 448750000,
+          "rssBytes": 3301699584,
+          "pssBytes": 1231177728,
+          "sizeBytes": 3954215,
+          "docsPerSec": 7.5913903908396785
+        },
+        {
+          "wallNs": 1077963269,
+          "cpuNs": 472500000,
+          "rssBytes": 3156656128,
+          "pssBytes": 1229891584,
+          "sizeBytes": 3954215,
+          "docsPerSec": 7.421403149869293
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "table",
+      "parallel": 1,
+      "n": 8,
+      "docsPerSecP50": 0.6778133721905484,
+      "docsPerSecP95": 0.684536010074311,
+      "wallP50Ms": 1475.103464,
+      "wallP95Ms": 1494.388729,
+      "cpuP50Ms": 1274.245,
+      "cpuP95Ms": 1285.182,
+      "rssP50Bytes": 85839872,
+      "rssP95Bytes": 86097920,
+      "pssP50Bytes": 80867328,
+      "pssP95Bytes": 81195008,
+      "sizeP50Bytes": 670285,
+      "samples": [
+        {
+          "wallNs": 1476033766,
+          "cpuNs": 1275443000,
+          "rssBytes": 85860352,
+          "pssBytes": 81195008,
+          "sizeBytes": 670285,
+          "docsPerSec": 0.6774912763072928
+        },
+        {
+          "wallNs": 1475103464,
+          "cpuNs": 1274245000,
+          "rssBytes": 85688320,
+          "pssBytes": 80994304,
+          "sizeBytes": 670285,
+          "docsPerSec": 0.677918549040842
+        },
+        {
+          "wallNs": 1474221401,
+          "cpuNs": 1273331000,
+          "rssBytes": 85843968,
+          "pssBytes": 80829440,
+          "sizeBytes": 670285,
+          "docsPerSec": 0.6783241644176892
+        },
+        {
+          "wallNs": 1464951921,
+          "cpuNs": 1264446000,
+          "rssBytes": 86097920,
+          "pssBytes": 81114112,
+          "sizeBytes": 670285,
+          "docsPerSec": 0.6826162590492278
+        },
+        {
+          "wallNs": 1475332357,
+          "cpuNs": 1274899000,
+          "rssBytes": 85405696,
+          "pssBytes": 80441344,
+          "sizeBytes": 670285,
+          "docsPerSec": 0.6778133721905484
+        },
+        {
+          "wallNs": 1494388729,
+          "cpuNs": 1285182000,
+          "rssBytes": 85848064,
+          "pssBytes": 80867328,
+          "sizeBytes": 670285,
+          "docsPerSec": 0.6691699292119059
+        },
+        {
+          "wallNs": 1482858034,
+          "cpuNs": 1281854000,
+          "rssBytes": 85487616,
+          "pssBytes": 80525312,
+          "sizeBytes": 670285,
+          "docsPerSec": 0.6743733904873593
+        },
+        {
+          "wallNs": 1460843528,
+          "cpuNs": 1260195000,
+          "rssBytes": 85839872,
+          "pssBytes": 81186816,
+          "sizeBytes": 670285,
+          "docsPerSec": 0.684536010074311
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "table",
+      "parallel": 1,
+      "n": 8,
+      "docsPerSecP50": 0.36718005290867023,
+      "docsPerSecP95": 0.38621164099925853,
+      "wallP50Ms": 2700.45323,
+      "wallP95Ms": 2762.343097,
+      "cpuP50Ms": 3700,
+      "cpuP95Ms": 3840,
+      "rssP50Bytes": 2134634496,
+      "rssP95Bytes": 2159362048,
+      "pssP50Bytes": 1096670208,
+      "pssP95Bytes": 1146875904,
+      "sizeP50Bytes": 8783412,
+      "samples": [
+        {
+          "wallNs": 2672383388,
+          "cpuNs": 3650000000,
+          "rssBytes": 2131066880,
+          "pssBytes": 1089750016,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.3741978057827981
+        },
+        {
+          "wallNs": 2589253906,
+          "cpuNs": 3370000000,
+          "rssBytes": 2134634496,
+          "pssBytes": 1100524544,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.38621164099925853
+        },
+        {
+          "wallNs": 2762343097,
+          "cpuNs": 3760000000,
+          "rssBytes": 2125070336,
+          "pssBytes": 1096658944,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.3620115115627869
+        },
+        {
+          "wallNs": 2727686362,
+          "cpuNs": 3840000000,
+          "rssBytes": 2141179904,
+          "pssBytes": 1096670208,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.36661106420856165
+        },
+        {
+          "wallNs": 2723459491,
+          "cpuNs": 3750000000,
+          "rssBytes": 2139181056,
+          "pssBytes": 1085233152,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.36718005290867023
+        },
+        {
+          "wallNs": 2656019295,
+          "cpuNs": 3690000000,
+          "rssBytes": 2133925888,
+          "pssBytes": 1117105152,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.37650328891906637
+        },
+        {
+          "wallNs": 2700453230,
+          "cpuNs": 3700000000,
+          "rssBytes": 2142302208,
+          "pssBytes": 1146875904,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.37030820933714154
+        },
+        {
+          "wallNs": 2744839196,
+          "cpuNs": 3820000000,
+          "rssBytes": 2159362048,
+          "pssBytes": 1109724160,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.3643200670761625
+        }
+      ]
+    },
+    {
+      "tool": "printkit-warm",
+      "fixture": "table",
+      "parallel": 1,
+      "n": 8,
+      "docsPerSecP50": 0.40321295761547804,
+      "docsPerSecP95": 0.4197943363233859,
+      "wallP50Ms": 2425.171143,
+      "wallP95Ms": 2599.130487,
+      "cpuP50Ms": 3870,
+      "cpuP95Ms": 4280,
+      "rssP50Bytes": 2226651136,
+      "rssP95Bytes": 2326937600,
+      "pssP50Bytes": 1187209216,
+      "pssP95Bytes": 1281638400,
+      "sizeP50Bytes": 8783412,
+      "samples": [
+        {
+          "wallNs": 2578783978,
+          "cpuNs": 3950000000,
+          "rssBytes": 2243420160,
+          "pssBytes": 1183204352,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.3877796700038284
+        },
+        {
+          "wallNs": 2425171143,
+          "cpuNs": 3660000000,
+          "rssBytes": 2226651136,
+          "pssBytes": 1186177024,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.41234203321542656
+        },
+        {
+          "wallNs": 2480079028,
+          "cpuNs": 3900000000,
+          "rssBytes": 2233745408,
+          "pssBytes": 1182715904,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.40321295761547804
+        },
+        {
+          "wallNs": 2393453785,
+          "cpuNs": 3870000000,
+          "rssBytes": 2294677504,
+          "pssBytes": 1231438848,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.41780627069847515
+        },
+        {
+          "wallNs": 2548309280,
+          "cpuNs": 4280000000,
+          "rssBytes": 2326937600,
+          "pssBytes": 1261138944,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.3924170460188412
+        },
+        {
+          "wallNs": 2599130487,
+          "cpuNs": 3880000000,
+          "rssBytes": 2186338304,
+          "pssBytes": 1281638400,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.38474405382941435
+        },
+        {
+          "wallNs": 2421632862,
+          "cpuNs": 3660000000,
+          "rssBytes": 2138165248,
+          "pssBytes": 1187209216,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.41294451181758035
+        },
+        {
+          "wallNs": 2382118846,
+          "cpuNs": 3430000000,
+          "rssBytes": 2195099648,
+          "pssBytes": 1247113216,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.4197943363233859
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "table",
+      "parallel": 4,
+      "n": 8,
+      "docsPerSecP50": 2.5069072125026604,
+      "docsPerSecP95": 2.5815552677809848,
+      "wallP50Ms": 1585.425315,
+      "wallP95Ms": 1614.621174,
+      "cpuP50Ms": 1279.22975,
+      "cpuP95Ms": 1320.65825,
+      "rssP50Bytes": 341987328,
+      "rssP95Bytes": 343838720,
+      "pssP50Bytes": 247975936,
+      "pssP95Bytes": 248402944,
+      "sizeP50Bytes": 670285,
+      "samples": [
+        {
+          "wallNs": 1614621174,
+          "cpuNs": 1279229750,
+          "rssBytes": 342511616,
+          "pssBytes": 248402944,
+          "sizeBytes": 670285,
+          "docsPerSec": 2.477361293417548
+        },
+        {
+          "wallNs": 1605186066,
+          "cpuNs": 1279836000,
+          "rssBytes": 342761472,
+          "pssBytes": 248079360,
+          "sizeBytes": 670285,
+          "docsPerSec": 2.491922951940202
+        },
+        {
+          "wallNs": 1578863929,
+          "cpuNs": 1268304000,
+          "rssBytes": 341315584,
+          "pssBytes": 247109632,
+          "sizeBytes": 670285,
+          "docsPerSec": 2.5334672143238253
+        },
+        {
+          "wallNs": 1585425315,
+          "cpuNs": 1266065500,
+          "rssBytes": 342548480,
+          "pssBytes": 247931904,
+          "sizeBytes": 670285,
+          "docsPerSec": 2.522982295132584
+        },
+        {
+          "wallNs": 1595591564,
+          "cpuNs": 1320658250,
+          "rssBytes": 341987328,
+          "pssBytes": 247897088,
+          "sizeBytes": 670285,
+          "docsPerSec": 2.5069072125026604
+        },
+        {
+          "wallNs": 1549453560,
+          "cpuNs": 1268376500,
+          "rssBytes": 343838720,
+          "pssBytes": 248004608,
+          "sizeBytes": 670285,
+          "docsPerSec": 2.5815552677809848
+        },
+        {
+          "wallNs": 1601758294,
+          "cpuNs": 1306430750,
+          "rssBytes": 341741568,
+          "pssBytes": 247975936,
+          "sizeBytes": 670285,
+          "docsPerSec": 2.497255681449276
+        },
+        {
+          "wallNs": 1571777806,
+          "cpuNs": 1284665000,
+          "rssBytes": 341966848,
+          "pssBytes": 248012800,
+          "sizeBytes": 670285,
+          "docsPerSec": 2.5448889688673972
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "table",
+      "parallel": 4,
+      "n": 8,
+      "docsPerSecP50": 0.8232560530548071,
+      "docsPerSecP95": 0.8385138964883054,
+      "wallP50Ms": 4858.605784,
+      "wallP95Ms": 5175.424988,
+      "cpuP50Ms": 3935,
+      "cpuP95Ms": 4162.5,
+      "rssP50Bytes": 8341192704,
+      "rssP95Bytes": 8411389952,
+      "pssP50Bytes": 3675127808,
+      "pssP95Bytes": 3745758208,
+      "sizeP50Bytes": 8783412,
+      "samples": [
+        {
+          "wallNs": 4806942946,
+          "cpuNs": 3935000000,
+          "rssBytes": 8321495040,
+          "pssBytes": 3586538496,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.8321297017532772
+        },
+        {
+          "wallNs": 4770344316,
+          "cpuNs": 3930000000,
+          "rssBytes": 8353009664,
+          "pssBytes": 3699296256,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.8385138964883054
+        },
+        {
+          "wallNs": 4958821316,
+          "cpuNs": 3975000000,
+          "rssBytes": 8341192704,
+          "pssBytes": 3701126144,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.8066433019261467
+        },
+        {
+          "wallNs": 4816626249,
+          "cpuNs": 3905000000,
+          "rssBytes": 8373493760,
+          "pssBytes": 3656025088,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.8304567955278773
+        },
+        {
+          "wallNs": 4858605784,
+          "cpuNs": 3857500000,
+          "rssBytes": 8379269120,
+          "pssBytes": 3722876928,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.8232814469477032
+        },
+        {
+          "wallNs": 4858755651,
+          "cpuNs": 3950000000,
+          "rssBytes": 8411389952,
+          "pssBytes": 3745758208,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.8232560530548071
+        },
+        {
+          "wallNs": 5175424988,
+          "cpuNs": 4162500000,
+          "rssBytes": 8301608960,
+          "pssBytes": 3626768384,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.7728833881806038
+        },
+        {
+          "wallNs": 4999115391,
+          "cpuNs": 4057500000,
+          "rssBytes": 8330113024,
+          "pssBytes": 3675127808,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.8001415624854897
+        }
+      ]
+    },
+    {
+      "tool": "printkit-warm",
+      "fixture": "table",
+      "parallel": 4,
+      "n": 8,
+      "docsPerSecP50": 0.9687525827095222,
+      "docsPerSecP95": 1.0204546444537208,
+      "wallP50Ms": 4087.752111,
+      "wallP95Ms": 4358.396017,
+      "cpuP50Ms": 3675,
+      "cpuP95Ms": 3880,
+      "rssP50Bytes": 4740956160,
+      "rssP95Bytes": 4825477120,
+      "pssP50Bytes": 3278779392,
+      "pssP95Bytes": 3360114688,
+      "sizeP50Bytes": 8783412,
+      "samples": [
+        {
+          "wallNs": 4001323657,
+          "cpuNs": 3487500000,
+          "rssBytes": 4825477120,
+          "pssBytes": 3278779392,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.9996691952180162
+        },
+        {
+          "wallNs": 4129021250,
+          "cpuNs": 3732500000,
+          "rssBytes": 4740956160,
+          "pssBytes": 3207587840,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.9687525827095222
+        },
+        {
+          "wallNs": 4087752111,
+          "cpuNs": 3675000000,
+          "rssBytes": 4802101248,
+          "pssBytes": 3205691392,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.9785329176972688
+        },
+        {
+          "wallNs": 4347352050,
+          "cpuNs": 3820000000,
+          "rssBytes": 4780085248,
+          "pssBytes": 3295834112,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.9201003171574292
+        },
+        {
+          "wallNs": 4358396017,
+          "cpuNs": 3880000000,
+          "rssBytes": 4655435776,
+          "pssBytes": 3251705856,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.9177688269716495
+        },
+        {
+          "wallNs": 4149261736,
+          "cpuNs": 3697500000,
+          "rssBytes": 4816785408,
+          "pssBytes": 3360114688,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.964026917197108
+        },
+        {
+          "wallNs": 4035754034,
+          "cpuNs": 3520000000,
+          "rssBytes": 4697370624,
+          "pssBytes": 3338895360,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.9911406806017455
+        },
+        {
+          "wallNs": 3919821446,
+          "cpuNs": 3497500000,
+          "rssBytes": 4738125824,
+          "pssBytes": 3297702912,
+          "sizeBytes": 8783412,
+          "docsPerSec": 1.0204546444537208
+        }
+      ]
+    },
+    {
+      "tool": "wkhtmltopdf",
+      "fixture": "table",
+      "parallel": 8,
+      "n": 8,
+      "docsPerSecP50": 2.6918667676371535,
+      "docsPerSecP95": 2.722075391396247,
+      "wallP50Ms": 2963.666181,
+      "wallP95Ms": 3043.32659,
+      "cpuP50Ms": 1302.807375,
+      "cpuP95Ms": 1312.2795,
+      "rssP50Bytes": 684847104,
+      "rssP95Bytes": 685895680,
+      "pssP50Bytes": 467428352,
+      "pssP95Bytes": 467796992,
+      "sizeP50Bytes": 670285,
+      "samples": [
+        {
+          "wallNs": 2938934030,
+          "cpuNs": 1296722875,
+          "rssBytes": 684859392,
+          "pssBytes": 467696640,
+          "sizeBytes": 670285,
+          "docsPerSec": 2.722075391396247
+        },
+        {
+          "wallNs": 2963666181,
+          "cpuNs": 1310021625,
+          "rssBytes": 683884544,
+          "pssBytes": 467256320,
+          "sizeBytes": 670285,
+          "docsPerSec": 2.699359344614393
+        },
+        {
+          "wallNs": 2949202720,
+          "cpuNs": 1302807375,
+          "rssBytes": 684597248,
+          "pssBytes": 467333120,
+          "sizeBytes": 670285,
+          "docsPerSec": 2.712597525340679
+        },
+        {
+          "wallNs": 3043326590,
+          "cpuNs": 1300965750,
+          "rssBytes": 685187072,
+          "pssBytes": 467621888,
+          "sizeBytes": 670285,
+          "docsPerSec": 2.6287024292059304
+        },
+        {
+          "wallNs": 3033802664,
+          "cpuNs": 1309101625,
+          "rssBytes": 685895680,
+          "pssBytes": 467428352,
+          "sizeBytes": 670285,
+          "docsPerSec": 2.636954636150323
+        },
+        {
+          "wallNs": 2963604201,
+          "cpuNs": 1299385625,
+          "rssBytes": 685445120,
+          "pssBytes": 467777536,
+          "sizeBytes": 670285,
+          "docsPerSec": 2.699415798270425
+        },
+        {
+          "wallNs": 2971915288,
+          "cpuNs": 1312279500,
+          "rssBytes": 684847104,
+          "pssBytes": 467796992,
+          "sizeBytes": 670285,
+          "docsPerSec": 2.6918667676371535
+        },
+        {
+          "wallNs": 2985391566,
+          "cpuNs": 1308226750,
+          "rssBytes": 684130304,
+          "pssBytes": 467110912,
+          "sizeBytes": 670285,
+          "docsPerSec": 2.6797154822537608
+        }
+      ]
+    },
+    {
+      "tool": "htmlprint",
+      "fixture": "table",
+      "parallel": 8,
+      "n": 8,
+      "docsPerSecP50": 0.8005017861393726,
+      "docsPerSecP95": 0.8287693648434267,
+      "wallP50Ms": 9788.800376,
+      "wallP95Ms": 10246.531748,
+      "cpuP50Ms": 4141.25,
+      "cpuP95Ms": 4346.25,
+      "rssP50Bytes": 16569266176,
+      "rssP95Bytes": 16755232768,
+      "pssP50Bytes": 6967709696,
+      "pssP95Bytes": 7073713152,
+      "sizeP50Bytes": 8783412,
+      "samples": [
+        {
+          "wallNs": 9723074799,
+          "cpuNs": 4141250000,
+          "rssBytes": 16738865152,
+          "pssBytes": 7072751616,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.8227849898699519
+        },
+        {
+          "wallNs": 9993731605,
+          "cpuNs": 4206250000,
+          "rssBytes": 16650551296,
+          "pssBytes": 6967709696,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.8005017861393726
+        },
+        {
+          "wallNs": 10246531748,
+          "cpuNs": 4346250000,
+          "rssBytes": 16569266176,
+          "pssBytes": 7073713152,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.7807519848422373
+        },
+        {
+          "wallNs": 10150840429,
+          "cpuNs": 4281250000,
+          "rssBytes": 16596529152,
+          "pssBytes": 6996467712,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.7881120835221436
+        },
+        {
+          "wallNs": 10023188017,
+          "cpuNs": 4232500000,
+          "rssBytes": 16562221056,
+          "pssBytes": 6926311424,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.7981492501618709
+        },
+        {
+          "wallNs": 9704706705,
+          "cpuNs": 4093750000,
+          "rssBytes": 16549412864,
+          "pssBytes": 6851149824,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.8243422746488865
+        },
+        {
+          "wallNs": 9652866454,
+          "cpuNs": 4133750000,
+          "rssBytes": 16755232768,
+          "pssBytes": 7004108800,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.8287693648434267
+        },
+        {
+          "wallNs": 9788800376,
+          "cpuNs": 4103750000,
+          "rssBytes": 16466731008,
+          "pssBytes": 6879512576,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.8172605112690062
+        }
+      ]
+    },
+    {
+      "tool": "printkit-warm",
+      "fixture": "table",
+      "parallel": 8,
+      "n": 8,
+      "docsPerSecP50": 1.0032010545545151,
+      "docsPerSecP95": 1.0203064497742595,
+      "wallP50Ms": 7966.441639,
+      "wallP95Ms": 8234.448793,
+      "cpuP50Ms": 3798.75,
+      "cpuP95Ms": 3915,
+      "rssP50Bytes": 7817977856,
+      "rssP95Bytes": 8132390912,
+      "pssP50Bytes": 5868741632,
+      "pssP95Bytes": 6195796992,
+      "sizeP50Bytes": 8783412,
+      "samples": [
+        {
+          "wallNs": 7848026964,
+          "cpuNs": 3688750000,
+          "rssBytes": 7873937408,
+          "pssBytes": 5687136256,
+          "sizeBytes": 8783412,
+          "docsPerSec": 1.0193644895331173
+        },
+        {
+          "wallNs": 7998421995,
+          "cpuNs": 3835000000,
+          "rssBytes": 7817977856,
+          "pssBytes": 5692560384,
+          "sizeBytes": 8783412,
+          "docsPerSec": 1.0001972895404851
+        },
+        {
+          "wallNs": 7840781563,
+          "cpuNs": 3702500000,
+          "rssBytes": 7892561920,
+          "pssBytes": 5868741632,
+          "sizeBytes": 8783412,
+          "docsPerSec": 1.0203064497742595
+        },
+        {
+          "wallNs": 8038446906,
+          "cpuNs": 3798750000,
+          "rssBytes": 7806910464,
+          "pssBytes": 5868467200,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.9952171226047032
+        },
+        {
+          "wallNs": 7853363257,
+          "cpuNs": 3741250000,
+          "rssBytes": 7754821632,
+          "pssBytes": 5887436800,
+          "sizeBytes": 8783412,
+          "docsPerSec": 1.0186718401023023
+        },
+        {
+          "wallNs": 7966441639,
+          "cpuNs": 3830000000,
+          "rssBytes": 7795335168,
+          "pssBytes": 5911316480,
+          "sizeBytes": 8783412,
+          "docsPerSec": 1.0042124655549742
+        },
+        {
+          "wallNs": 8234448793,
+          "cpuNs": 3915000000,
+          "rssBytes": 8132390912,
+          "pssBytes": 6195796992,
+          "sizeBytes": 8783412,
+          "docsPerSec": 0.9715282954702078
+        },
+        {
+          "wallNs": 7974473276,
+          "cpuNs": 3828750000,
+          "rssBytes": 7906086912,
+          "pssBytes": 6028431360,
+          "sizeBytes": 8783412,
+          "docsPerSec": 1.0032010545545151
+        }
+      ]
+    }
+  ]
+}
