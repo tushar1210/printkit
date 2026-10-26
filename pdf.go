@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"strings"
 	"time"
 
@@ -20,7 +21,9 @@ func (c *Converter) renderPDF(ctx context.Context, req Request) ([]byte, error) 
 	var pieces [][]byte
 	var marks []pdfcpu.Bookmark
 	if req.Cover != nil {
-		cover, err := c.renderPlain(ctx, *req.Cover, req, plainOpts{})
+		coverReq := withInput(req, *req.Cover, true)
+		coverReq.TOC = nil
+		cover, err := c.renderSingle(ctx, *req.Cover, coverReq)
 		if err != nil {
 			if errors.Is(err, errSkipInput) {
 				return nil, ErrNoInput
@@ -117,6 +120,12 @@ func (c *Converter) renderPDF(ctx context.Context, req Request) ([]byte, error) 
 			}
 		}
 	}
+	if req.Copies > 1 {
+		out, err = repeatPDF(out, req.Copies, boolOr(req.Collate, true))
+		if err != nil {
+			return nil, err
+		}
+	}
 	return out, nil
 }
 
@@ -139,11 +148,62 @@ func validateRequest(req Request) error {
 	default:
 		return optionf("LoadErrors", "must be abort, ignore, or skip")
 	}
+	if req.Copies < 0 {
+		return optionf("Copies", "must be zero or positive")
+	}
+	if req.MinimumFontSize < 0 {
+		return optionf("MinimumFontSize", "must be zero or positive")
+	}
 	_, err := req.Page.box(headerActive(req.Header), headerActive(req.Footer))
 	return err
 }
 
+func withInput(req Request, in Input, cover bool) Request {
+	out := req
+	if in.Page != nil {
+		out.Page = *in.Page
+	}
+	if cover {
+		if in.Header == nil {
+			out.Header = nil
+		}
+		if in.Footer == nil {
+			out.Footer = nil
+		}
+	}
+	if in.Header != nil {
+		if headerActive(in.Header) {
+			h := *in.Header
+			out.Header = &h
+		} else {
+			out.Header = nil
+		}
+	}
+	if in.Footer != nil {
+		if headerActive(in.Footer) {
+			f := *in.Footer
+			out.Footer = &f
+		} else {
+			out.Footer = nil
+		}
+	}
+	return out
+}
+
+func heterogeneous(req Request) bool {
+	for _, in := range req.Inputs {
+		if in.Page != nil || in.Header != nil || in.Footer != nil {
+			return true
+		}
+	}
+	return false
+}
+
 func (c *Converter) renderSingle(ctx context.Context, in Input, req Request) (rendered, error) {
+	req = withInput(req, in, false)
+	if req.TOC != nil && req.TOC.Page != nil {
+		return c.renderSeparateTOC(ctx, in, req)
+	}
 	hasHeader := headerActive(req.Header)
 	hasFooter := headerActive(req.Footer)
 	box, err := req.Page.box(hasHeader, hasFooter)
@@ -192,7 +252,11 @@ func (c *Converter) renderSingle(ctx context.Context, in Input, req Request) (re
 				return err
 			}
 			estimate := estimateTOCPages(len(items), box)
-			if err := injectTOC(tab, tocFragment(req.TOC.title(), items, estimate, req.PageOffset)); err != nil {
+			frag, err := tocFragment(req.TOC, items, estimate, req.PageOffset)
+			if err != nil {
+				return err
+			}
+			if err := injectTOC(tab, frag); err != nil {
 				return err
 			}
 			pdf, err := c.printPDF(tab, box, scale, req, info, !static)
@@ -212,7 +276,11 @@ func (c *Converter) renderSingle(ctx context.Context, in Input, req Request) (re
 				shift = 1
 			}
 			if shift != estimate {
-				if err := injectTOC(tab, tocFragment(req.TOC.title(), items, shift, req.PageOffset)); err != nil {
+				frag, err := tocFragment(req.TOC, items, shift, req.PageOffset)
+				if err != nil {
+					return err
+				}
+				if err := injectTOC(tab, frag); err != nil {
 					return err
 				}
 				pdf, err = c.printPDF(tab, box, scale, req, info, !static)
@@ -221,7 +289,7 @@ func (c *Converter) renderSingle(ctx context.Context, in Input, req Request) (re
 				}
 			}
 			if static && (hasHeader || hasFooter) {
-				pdf, err = c.overlayBands(tab, pdf, req, info, box, nil)
+				pdf, err = c.overlayBands(tab, pdf, req, info, box, nil, 0, 0)
 				if err != nil {
 					return err
 				}
@@ -244,7 +312,7 @@ func (c *Converter) renderSingle(ctx context.Context, in Input, req Request) (re
 			return err
 		}
 		if static && (hasHeader || hasFooter) {
-			pdf, err = c.overlayBands(tab, pdf, req, info, box, nil)
+			pdf, err = c.overlayBands(tab, pdf, req, info, box, nil, 0, 0)
 			if err != nil {
 				return err
 			}
@@ -256,6 +324,9 @@ func (c *Converter) renderSingle(ctx context.Context, in Input, req Request) (re
 }
 
 func (c *Converter) renderMany(ctx context.Context, req Request) (rendered, error) {
+	if heterogeneous(req) {
+		return c.renderManyMixed(ctx, req)
+	}
 	wantHeader := headerActive(req.Header) || headerActive(req.Footer)
 	var parts [][]byte
 	var groups [][]pdfcpu.Bookmark
@@ -292,8 +363,18 @@ func (c *Converter) renderMany(ctx context.Context, req Request) (rendered, erro
 	var links []tocLink
 	if req.TOC != nil {
 		items := flattenBookmarks(marks, req.TOC.depth())
-		estimate := estimateTOCPages(len(items), box)
-		tocPDF, used, err := c.printStandaloneTOC(ctx, req, box, items, estimate)
+		tocBox := box
+		if req.TOC.Page != nil {
+			hasH := headerActive(req.Header)
+			hasF := headerActive(req.Footer)
+			tb, err := req.TOC.Page.box(hasH, hasF)
+			if err != nil {
+				return rendered{}, err
+			}
+			tocBox = applySpacing(tb, req.Header, req.Footer)
+		}
+		estimate := estimateTOCPages(len(items), tocBox)
+		tocPDF, used, err := c.printStandaloneTOC(ctx, req, tocBox, items, estimate)
 		if err != nil {
 			return rendered{}, err
 		}
@@ -311,7 +392,7 @@ func (c *Converter) renderMany(ctx context.Context, req Request) (rendered, erro
 			links = append(links, tocLink{level: it.level, page: it.page + tocN})
 		}
 		if len(links) > 0 {
-			merged, err = addTOCAnnotations(merged, links, box)
+			merged, err = addTOCAnnotations(merged, links, tocBox)
 			if err != nil {
 				return rendered{}, err
 			}
@@ -374,7 +455,11 @@ func (c *Converter) printStandaloneTOC(ctx context.Context, req Request, box pag
 	var err error
 	used := estimate
 	for attempt := 0; attempt < 2; attempt++ {
-		doc := standaloneHTML(tocFragment(req.TOC.title(), items, used, req.PageOffset))
+		frag, ferr := tocFragment(req.TOC, items, used, req.PageOffset)
+		if ferr != nil {
+			return nil, nil, ferr
+		}
+		doc := standaloneHTML(frag)
 		err = c.withTab(ctx, req.Network.Proxy, func(tab context.Context) error {
 			info, cleanup, err := c.open(tab, navSpec{
 				in:      FromHTML(doc),
@@ -386,7 +471,7 @@ func (c *Converter) printStandaloneTOC(ctx context.Context, req Request, box pag
 				return err
 			}
 			defer cleanup()
-			pdf, err = c.printPDF(tab, box, 1, Request{Page: req.Page, Outline: Outline{Enabled: boolPtr(false)}}, info, false)
+			pdf, err = c.printPDF(tab, box, 1, Request{Page: req.Page, Outline: Outline{Enabled: boolPtr(false)}, Tagged: req.Tagged}, info, false)
 			return err
 		})
 		if err != nil {
@@ -412,7 +497,7 @@ func (c *Converter) stampMerged(ctx context.Context, pdf []byte, req Request, bo
 			info.Location = displayOf(req.Inputs[0])
 		}
 		var err error
-		out, err = c.overlayBands(tab, pdf, req, info, box, marks)
+		out, err = c.overlayBands(tab, pdf, req, info, box, marks, 0, 0)
 		return err
 	})
 	_ = marks
@@ -458,6 +543,9 @@ func (c *Converter) printPDF(ctx context.Context, box pageBox, scale float64, re
 	if req.Outline.enabled() {
 		on := true
 		opts = append(opts, func(p *cdppage.PrintToPDFParams) { p.GenerateDocumentOutline = &on })
+	} else if !req.Tagged {
+		off := false
+		opts = append(opts, func(p *cdppage.PrintToPDFParams) { p.GenerateTaggedPDF = &off })
 	}
 	if nativeHeader {
 		data := HeaderData{
@@ -493,6 +581,14 @@ func (c *Converter) printPDF(ctx context.Context, box pageBox, scale float64, re
 	if len(buf) < 5 || string(buf[:5]) != "%PDF-" {
 		return nil, fmt.Errorf("printkit: chromium returned an empty pdf")
 	}
+	// Chrome writes /Outlines only as part of a tagged PDF. Drop the structure
+	// tree afterwards so large tables stay small and bookmarks remain.
+	if req.Outline.enabled() && !req.Tagged {
+		buf, err = stripStructureTree(buf)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return buf, nil
 }
 
@@ -503,10 +599,16 @@ func renderSide(h *HeaderFooter, data HeaderData, lineAtTop bool) (string, error
 	return h.render(data, lineAtTop)
 }
 
-func (c *Converter) overlayBands(ctx context.Context, pdf []byte, req Request, info pageInfo, box pageBox, marks []pdfcpu.Bookmark) ([]byte, error) {
+func (c *Converter) overlayBands(ctx context.Context, pdf []byte, req Request, info pageInfo, box pageBox, marks []pdfcpu.Bookmark, pageStart, pageTotal int) ([]byte, error) {
 	n, err := pdfPageCount(pdf)
 	if err != nil {
 		return nil, err
+	}
+	if pageStart <= 0 {
+		pageStart = 1
+	}
+	if pageTotal <= 0 {
+		pageTotal = n
 	}
 	if marks == nil {
 		marks, err = pdfBookmarks(pdf)
@@ -516,7 +618,7 @@ func (c *Converter) overlayBands(ctx context.Context, pdf []byte, req Request, i
 	}
 	labels := sectionLabels(marks, n)
 	if headerActive(req.Header) {
-		band, err := c.renderBand(ctx, req.Header, labels, info, box, n, req.PageOffset, true)
+		band, err := c.renderBand(ctx, req.Header, labels, info, box, n, pageStart, pageTotal, req.PageOffset, req.Tagged, true)
 		if err != nil {
 			return nil, err
 		}
@@ -526,7 +628,7 @@ func (c *Converter) overlayBands(ctx context.Context, pdf []byte, req Request, i
 		}
 	}
 	if headerActive(req.Footer) {
-		band, err := c.renderBand(ctx, req.Footer, labels, info, box, n, req.PageOffset, false)
+		band, err := c.renderBand(ctx, req.Footer, labels, info, box, n, pageStart, pageTotal, req.PageOffset, req.Tagged, false)
 		if err != nil {
 			return nil, err
 		}
@@ -545,7 +647,7 @@ func (c *Converter) overlayBands(ctx context.Context, pdf []byte, req Request, i
 	return pdf, nil
 }
 
-func (c *Converter) renderBand(ctx context.Context, hf *HeaderFooter, labels []pageLabel, info pageInfo, box pageBox, n, offset int, top bool) ([]byte, error) {
+func (c *Converter) renderBand(ctx context.Context, hf *HeaderFooter, labels []pageLabel, info pageInfo, box pageBox, n, pageStart, pageTotal, offset int, tagged, top bool) ([]byte, error) {
 	height := box.marginTop
 	if !top {
 		height = box.marginBottom
@@ -560,8 +662,8 @@ func (c *Converter) renderBand(ctx context.Context, hf *HeaderFooter, labels []p
 			label = labels[i-1]
 		}
 		data := HeaderData{
-			Page:       i,
-			PageCount:  n,
+			Page:       pageStart + i - 1,
+			PageCount:  pageTotal,
 			PageOffset: offset,
 			Section:    label.section,
 			Subsection: label.subsection,
@@ -586,12 +688,17 @@ func (c *Converter) renderBand(ctx context.Context, hf *HeaderFooter, labels []p
 	if err := chromedp.Do(ctx, chromedp.Navigate(mounted.url)); err != nil {
 		return nil, fmt.Errorf("printkit: header: %w", err)
 	}
-	buf, err := chromedp.Run(ctx, chromedp.PrintToPDF(
+	opts := []chromedp.PDFOption{
 		chromedp.PDFPaper(chromedp.PaperSize{Width: box.width, Height: height}),
 		chromedp.PDFMargins(0, 0, 0, 0),
 		chromedp.PDFPreferCSSPageSize(),
 		chromedp.PDFScale(1),
-	))
+	}
+	if !tagged {
+		off := false
+		opts = append(opts, func(p *cdppage.PrintToPDFParams) { p.GenerateTaggedPDF = &off })
+	}
+	buf, err := chromedp.Run(ctx, chromedp.PrintToPDF(opts...))
 	if err != nil {
 		return nil, fmt.Errorf("printkit: header: %w", err)
 	}
@@ -615,6 +722,7 @@ func navFor(in Input, req Request) navSpec {
 		stripExternal: req.DisableExternalLinks,
 		stripInternal: req.DisableInternalLinks,
 		load:          req.LoadErrors,
+		minFontPx:     req.MinimumFontSize * 96 / 72,
 	}
 }
 
@@ -758,25 +866,244 @@ func estimateTOCPages(n int, box pageBox) int {
 	return pages
 }
 
-func tocFragment(title string, items []tocItem, tocPages, offset int) string {
-	var b strings.Builder
-	b.WriteString(`<section id="printkit-toc" style="font-family:'Liberation Sans',DejaVu Sans,sans-serif;color:#1c1917;">`)
-	fmt.Fprintf(&b, `<div style="font-size:22pt;font-weight:600;margin:0 0 14px;">%s</div>`, htmlEscape(title))
+// DefaultTOCTemplate is the HTML template used when TOC.Template is empty.
+// Execute it with a value that has Title and Entries. Each entry has Level,
+// Title, Page, Href, and Indent.
+const DefaultTOCTemplate = `<section id="printkit-toc" style="font-family:'Liberation Sans',DejaVu Sans,sans-serif;color:#1c1917;"><div style="font-size:22pt;font-weight:600;margin:0 0 14px;">{{.Title}}</div>{{range .Entries}}<div style="display:flex;justify-content:space-between;gap:12px;margin:0 0 6px;padding-left:{{.Indent}}px;font-size:12pt;line-height:1.4;">{{if .Href}}<a href="{{.Href}}" style="color:#1d4ed8;text-decoration:none;">{{.Title}}</a>{{else}}<span>{{.Title}}</span>{{end}}<span>{{.Page}}</span></div>{{end}}</section>`
+
+var defaultTOCTmpl = template.Must(template.New("toc").Parse(DefaultTOCTemplate))
+
+type tocView struct {
+	Title   string
+	Entries []tocEntryView
+}
+
+type tocEntryView struct {
+	Level  int
+	Title  string
+	Page   int
+	Href   string
+	Indent int
+}
+
+func tocFragment(toc *TOC, items []tocItem, tocPages, offset int) (string, error) {
+	view := tocView{Title: toc.title()}
 	for _, it := range items {
 		shown := it.page + tocPages + offset
 		if shown < 1 {
 			shown = 1
 		}
-		indent := max(it.level-1, 0) * 16
 		href := ""
 		if it.id != "" {
-			href = ` href="#` + htmlEscape(it.id) + `"`
+			href = "#" + it.id
 		}
-		fmt.Fprintf(&b, `<div style="display:flex;justify-content:space-between;gap:12px;margin:0 0 6px;padding-left:%dpx;font-size:12pt;line-height:1.4;"><a%s style="color:#1d4ed8;text-decoration:none;">%s</a><span>%d</span></div>`,
-			indent, href, htmlEscape(it.title), shown)
+		view.Entries = append(view.Entries, tocEntryView{
+			Level:  it.level,
+			Title:  it.title,
+			Page:   shown,
+			Href:   href,
+			Indent: max(it.level-1, 0) * 16,
+		})
 	}
-	b.WriteString(`</section>`)
-	return b.String()
+	tmpl := defaultTOCTmpl
+	if toc != nil && strings.TrimSpace(toc.Template) != "" {
+		parsed, err := template.New("toc").Parse(toc.Template)
+		if err != nil {
+			return "", optionf("TOC.Template", "%s", err.Error())
+		}
+		tmpl = parsed
+	}
+	var b strings.Builder
+	if err := tmpl.Execute(&b, view); err != nil {
+		return "", fmt.Errorf("printkit: toc template: %w", err)
+	}
+	return b.String(), nil
+}
+
+func (c *Converter) renderSeparateTOC(ctx context.Context, in Input, req Request) (rendered, error) {
+	bodyReq := req
+	bodyReq.TOC = nil
+	hasHeader := headerActive(bodyReq.Header)
+	hasFooter := headerActive(bodyReq.Footer)
+	box, err := bodyReq.Page.box(hasHeader, hasFooter)
+	if err != nil {
+		return rendered{}, err
+	}
+	box = applySpacing(box, bodyReq.Header, bodyReq.Footer)
+	body, err := c.renderPlain(ctx, in, bodyReq, plainOpts{reserveHeader: hasHeader || hasFooter})
+	if err != nil {
+		return rendered{}, err
+	}
+	items := flattenBookmarks(body.marks, req.TOC.depth())
+	tocBox := box
+	if req.TOC.Page != nil {
+		tb, err := req.TOC.Page.box(false, false)
+		if err != nil {
+			return rendered{}, err
+		}
+		tocBox = tb
+	}
+	estimate := estimateTOCPages(len(items), tocBox)
+	tocPDF, used, err := c.printStandaloneTOC(ctx, req, tocBox, items, estimate)
+	if err != nil {
+		return rendered{}, err
+	}
+	tocN, err := pdfPageCount(tocPDF)
+	if err != nil {
+		return rendered{}, err
+	}
+	bodyPDF := body.pdf
+	bodyN, err := pdfPageCount(bodyPDF)
+	if err != nil {
+		return rendered{}, err
+	}
+	if hasHeader || hasFooter {
+		info := pageInfo{Title: req.Metadata.Title, Location: displayOf(in)}
+		err = c.withTab(ctx, req.Network.Proxy, func(tab context.Context) error {
+			var stampErr error
+			bodyPDF, stampErr = c.overlayBands(tab, bodyPDF, bodyReq, info, box, body.marks, tocN+1, tocN+bodyN)
+			return stampErr
+		})
+		if err != nil {
+			return rendered{}, err
+		}
+	}
+	merged, err := mergePDFs([][]byte{tocPDF, bodyPDF})
+	if err != nil {
+		return rendered{}, err
+	}
+	marks := shiftBookmarks(body.marks, tocN)
+	marks = append([]pdfcpu.Bookmark{{Title: req.TOC.title(), PageFrom: 1}}, marks...)
+	var links []tocLink
+	for _, it := range used {
+		links = append(links, tocLink{level: it.level, page: it.page + tocN})
+	}
+	if len(links) > 0 {
+		merged, err = addTOCAnnotations(merged, links, tocBox)
+		if err != nil {
+			return rendered{}, err
+		}
+	}
+	merged, err = setBookmarks(merged, filterDepth(marks, req.Outline.depth()))
+	if err != nil {
+		return rendered{}, err
+	}
+	return rendered{pdf: merged, marks: marks}, nil
+}
+
+func (c *Converter) renderManyMixed(ctx context.Context, req Request) (rendered, error) {
+	type part struct {
+		pdf   []byte
+		marks []pdfcpu.Bookmark
+		n     int
+		spec  Request
+		box   pageBox
+		in    Input
+	}
+	var parts []part
+	for _, in := range req.Inputs {
+		spec := withInput(req, in, false)
+		spec.TOC = nil
+		hasH := headerActive(spec.Header)
+		hasF := headerActive(spec.Footer)
+		box, err := spec.Page.box(hasH, hasF)
+		if err != nil {
+			return rendered{}, err
+		}
+		box = applySpacing(box, spec.Header, spec.Footer)
+		plain, err := c.renderPlain(ctx, in, spec, plainOpts{reserveHeader: hasH || hasF})
+		if errors.Is(err, errSkipInput) {
+			continue
+		}
+		if err != nil {
+			return rendered{}, err
+		}
+		n, err := pdfPageCount(plain.pdf)
+		if err != nil {
+			return rendered{}, err
+		}
+		parts = append(parts, part{pdf: plain.pdf, marks: plain.marks, n: n, spec: spec, box: box, in: in})
+	}
+	if len(parts) == 0 {
+		return rendered{}, ErrNoInput
+	}
+	total := 0
+	for _, p := range parts {
+		total += p.n
+	}
+	var pdfs [][]byte
+	var groups [][]pdfcpu.Bookmark
+	var counts []int
+	base := 0
+	for _, p := range parts {
+		pdf := p.pdf
+		if headerActive(p.spec.Header) || headerActive(p.spec.Footer) {
+			info := pageInfo{Title: req.Metadata.Title, Location: displayOf(p.in)}
+			err := c.withTab(ctx, req.Network.Proxy, func(tab context.Context) error {
+				var stampErr error
+				pdf, stampErr = c.overlayBands(tab, pdf, p.spec, info, p.box, p.marks, base+1, total)
+				return stampErr
+			})
+			if err != nil {
+				return rendered{}, err
+			}
+		}
+		pdfs = append(pdfs, pdf)
+		groups = append(groups, p.marks)
+		counts = append(counts, p.n)
+		base += p.n
+	}
+	merged, err := mergePDFs(pdfs)
+	if err != nil {
+		return rendered{}, err
+	}
+	marks := concatBookmarks(groups, counts)
+	box, err := req.Page.box(headerActive(req.Header), headerActive(req.Footer))
+	if err != nil {
+		return rendered{}, err
+	}
+	box = applySpacing(box, req.Header, req.Footer)
+	if req.TOC != nil {
+		items := flattenBookmarks(marks, req.TOC.depth())
+		tocBox := box
+		if req.TOC.Page != nil {
+			tb, err := req.TOC.Page.box(false, false)
+			if err != nil {
+				return rendered{}, err
+			}
+			tocBox = tb
+		}
+		estimate := estimateTOCPages(len(items), tocBox)
+		tocPDF, used, err := c.printStandaloneTOC(ctx, req, tocBox, items, estimate)
+		if err != nil {
+			return rendered{}, err
+		}
+		tocN, err := pdfPageCount(tocPDF)
+		if err != nil {
+			return rendered{}, err
+		}
+		merged, err = mergePDFs([][]byte{tocPDF, merged})
+		if err != nil {
+			return rendered{}, err
+		}
+		marks = shiftBookmarks(marks, tocN)
+		marks = append([]pdfcpu.Bookmark{{Title: req.TOC.title(), PageFrom: 1}}, marks...)
+		var links []tocLink
+		for _, it := range used {
+			links = append(links, tocLink{level: it.level, page: it.page + tocN})
+		}
+		if len(links) > 0 {
+			merged, err = addTOCAnnotations(merged, links, tocBox)
+			if err != nil {
+				return rendered{}, err
+			}
+		}
+	}
+	merged, err = setBookmarks(merged, filterDepth(marks, req.Outline.depth()))
+	if err != nil {
+		return rendered{}, err
+	}
+	return rendered{pdf: merged, marks: marks}, nil
 }
 
 func injectTOC(ctx context.Context, fragment string) error {
@@ -801,13 +1128,4 @@ func injectTOC(ctx context.Context, fragment string) error {
 func standaloneHTML(fragment string) string {
 	return `<!doctype html><html><head><meta charset="utf-8"><title>Table of Contents</title>
 <style>html,body{margin:0;padding:0;} a{color:#1d4ed8;}</style></head><body>` + fragment + `</body></html>`
-}
-
-func htmlEscape(s string) string {
-	return strings.NewReplacer(
-		"&", "&amp;",
-		"<", "&lt;",
-		">", "&gt;",
-		`"`, "&#34;",
-	).Replace(s)
 }

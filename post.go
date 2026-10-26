@@ -432,3 +432,177 @@ func addTOCAnnotations(pdf []byte, links []tocLink, box pageBox) ([]byte, error)
 	}
 	return buf.Bytes(), nil
 }
+
+// stripStructureTree drops Chromium's tagged PDF structure while keeping the
+// document outline. Chrome 156 emits /Outlines only when it also writes the
+// structure tree. Each outline item points at that tree with /SE, so a normal
+// mark-and-sweep still keeps every structure element. The fast path copies the
+// objects reachable from the catalog and info dictionary and does not follow
+// /SE, /StructTreeRoot, or /MarkInfo. A PDF it cannot rewrite falls back to
+// pdfcpu, which parses the whole file.
+func stripStructureTree(b []byte) ([]byte, error) {
+	if !bytes.Contains(b, []byte("/StructTreeRoot")) {
+		return b, nil
+	}
+	if out, err := stripStructureFast(b); err == nil {
+		return out, nil
+	}
+	return stripStructureSlow(b)
+}
+
+func stripStructureSlow(b []byte) ([]byte, error) {
+	// Chrome 156 stores the document outline inside the tagged structure tree.
+	// Copy the bookmarks first, then drop both so the tree's objects can be freed.
+	marks, err := pdfBookmarks(b)
+	if err != nil {
+		return nil, err
+	}
+	ctx, err := api.ReadContext(context.Background(), bytes.NewReader(b), nil)
+	if err != nil {
+		return nil, fmt.Errorf("printkit: strip structure: %w", err)
+	}
+	root, err := ctx.Catalog()
+	if err != nil {
+		return nil, fmt.Errorf("printkit: strip structure: %w", err)
+	}
+	// pdfcpu's optimizer does not drop unreferenced objects, and Chrome's
+	// outline dictionary keeps the structure tree reachable. Unlink both,
+	// free what the catalog and info dictionary cannot reach, then write the
+	// bookmarks back as a plain outline.
+	root.Delete("StructTreeRoot")
+	root.Delete("MarkInfo")
+	root.Delete("Outlines")
+	if err := dropUnreachable(ctx); err != nil {
+		return nil, fmt.Errorf("printkit: strip structure: %w", err)
+	}
+	var buf bytes.Buffer
+	if err := api.WriteContext(context.Background(), ctx, &buf); err != nil {
+		return nil, fmt.Errorf("printkit: strip structure: %w", err)
+	}
+	out := buf.Bytes()
+	if len(out) < 5 || string(out[:5]) != "%PDF-" {
+		return nil, fmt.Errorf("printkit: strip structure: empty pdf")
+	}
+	if len(marks) == 0 {
+		return out, nil
+	}
+	return setBookmarks(out, marks)
+}
+
+func dropUnreachable(ctx *model.Context) error {
+	seen := map[int]bool{0: true}
+	var walk func(types.Object) error
+	walk = func(o types.Object) error {
+		if o == nil {
+			return nil
+		}
+		switch obj := o.(type) {
+		case types.IndirectRef:
+			nr := int(obj.ObjectNumber)
+			if seen[nr] {
+				return nil
+			}
+			seen[nr] = true
+			next, err := ctx.Dereference(obj)
+			if err != nil || next == nil {
+				return err
+			}
+			return walk(next)
+		case types.Dict:
+			for _, v := range obj {
+				if err := walk(v); err != nil {
+					return err
+				}
+			}
+		case types.StreamDict:
+			return walk(obj.Dict)
+		case types.Array:
+			for _, v := range obj {
+				if err := walk(v); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+	for _, seed := range []*types.IndirectRef{ctx.Root, ctx.Info, ctx.Encrypt} {
+		if seed == nil {
+			continue
+		}
+		if err := walk(*seed); err != nil {
+			return err
+		}
+	}
+	for nr, entry := range ctx.Table {
+		if entry == nil || entry.Free || seen[nr] {
+			continue
+		}
+		if err := ctx.FreeObject(nr); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func repeatPDF(b []byte, copies int, collate bool) ([]byte, error) {
+	if copies <= 1 {
+		return b, nil
+	}
+	marks, err := pdfBookmarks(b)
+	if err != nil {
+		return nil, err
+	}
+	n, err := pdfPageCount(b)
+	if err != nil {
+		return nil, err
+	}
+	if collate {
+		parts := make([][]byte, copies)
+		for i := range parts {
+			parts[i] = b
+		}
+		merged, err := mergePDFs(parts)
+		if err != nil {
+			return nil, err
+		}
+		if len(marks) == 0 {
+			return merged, nil
+		}
+		groups := make([][]pdfcpu.Bookmark, copies)
+		counts := make([]int, copies)
+		for i := 0; i < copies; i++ {
+			groups[i] = marks
+			counts[i] = n
+		}
+		return setBookmarks(merged, concatBookmarks(groups, counts))
+	}
+	sel := make([]string, 0, n*copies)
+	for p := 1; p <= n; p++ {
+		page := strconv.Itoa(p)
+		for c := 0; c < copies; c++ {
+			sel = append(sel, page)
+		}
+	}
+	var buf bytes.Buffer
+	if err := api.Collect(context.Background(), bytes.NewReader(b), &buf, sel, nil); err != nil {
+		return nil, fmt.Errorf("printkit: copies: %w", err)
+	}
+	out := buf.Bytes()
+	if len(marks) == 0 {
+		return out, nil
+	}
+	return setBookmarks(out, scaleBookmarkPages(marks, copies))
+}
+
+func scaleBookmarkPages(bms []pdfcpu.Bookmark, copies int) []pdfcpu.Bookmark {
+	out := make([]pdfcpu.Bookmark, len(bms))
+	for i, b := range bms {
+		if b.PageFrom > 0 {
+			b.PageFrom = (b.PageFrom-1)*copies + 1
+		}
+		b.Kids = scaleBookmarkPages(b.Kids, copies)
+		b.Parent = nil
+		out[i] = b
+	}
+	return out
+}

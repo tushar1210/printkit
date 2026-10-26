@@ -19,21 +19,22 @@ Headers and footers use Chromium's header classes (`pageNumber`, `totalPages`, `
 ## Requirements
 
 - Go 1.26 or newer. chromedp v0.21 and pdfcpu v0.16 declare that as their minimum. The module follows them instead of pinning older releases to claim Go 1.22.
-- The import path is `github.com/tushar-singh-dev/printkit`.
 - Google Chrome or Chromium on `PATH`, or `CHROME_PATH` / `WithChromePath`.
 - Integration tests also use `pdftotext` and `pdfinfo` from poppler.
 
 ## Install
 
-```bash
-go get github.com/tushar-singh-dev/printkit@v0.1.0
-```
-
-The command:
+The module path is `github.com/tushar1210/printkit`. The repository is private: [github.com/tushar1210/printkit](https://github.com/tushar1210/printkit).
 
 ```bash
-go install github.com/tushar-singh-dev/printkit/cmd/htmlprint@v0.1.0
+go env -w GOPRIVATE=github.com/tushar1210
+go get github.com/tushar1210/printkit@v0.1.0
+go install github.com/tushar1210/printkit/cmd/htmlprint@v0.1.0
 ```
+
+`GOPRIVATE` fetches that path directly and skips the public checksum database, so `GONOSUMDB` and `GONOPROXY` do not need a separate setting. Git has to present a credential that can read `tushar1210/printkit`: an HTTPS credential helper, or an SSH key registered on the GitHub account. Leave `GOPROXY` at its default.
+
+From a checkout of this repository, `go build -o htmlprint ./cmd/htmlprint` builds the command without fetching the module.
 
 A program named `wkhtmltopdf` or `wkhtmltoimage` selects PDF or image mode, so the binary can sit on `PATH` under those names.
 
@@ -65,6 +66,8 @@ Errors to match with `errors.Is`: `ErrChromeNotFound`, `ErrClosed`, `ErrNoInput`
 ### Defaults
 
 The zero `Request` prints A4 portrait, 10 mm margins, scale 1, CSS print media, and background graphics. Smart shrinking is off. Outlines from headings are on. JavaScript and images are on. When a header or footer is set and the margin was not chosen with `Margins` or `MarginAll`, that side is raised to 16 mm so the template is not clipped. An explicit zero margin stays zero.
+
+Tagged PDF is off. Chrome 156 writes a structure element for every marked node, and it only emits `/Outlines` as part of that tree. Left in place, that tree was 8,783,412 bytes (8.4 MiB) and roughly 55,000 objects on the 5,000-row table. printkit still prints with the tree so the outline exists, then copies the objects reachable from the catalog and the info dictionary. It does not follow `/StructTreeRoot`, `/MarkInfo`, or an outline item's `/SE` link, and it drops those keys, so the structure elements are not written. Bookmarks, text extraction, and table-of-contents links stay. On 26 October 2026 that table was 473,001 bytes (462 KiB) with the outline intact. A PDF this rewriter cannot read falls back to a pdfcpu pass that frees the same objects. Set `Request.Tagged` or pass `--tagged-pdf` when a consumer needs the accessible structure tree. The default is off because wkhtmltopdf's output is untagged and the tree dominates file size on large tables. The outline is the feature scripts actually use.
 
 `Page.DPI` does not resample a PDF. Print output is vector, and Chromium has no print-DPI switch. wkhtmltopdf's `--dpi` was already a no-op on X11. Image requests use DPI as the device scale (`DPI/96`) when `Scale` is zero.
 
@@ -112,6 +115,11 @@ wkhtmltopdf 0.12.6 turned local file access off by default. The CLI leaves it on
 | `--title`, `--author`, `--subject`, `--keywords` | `Metadata` (`--author`, `--subject`, `--keywords` are extensions) |
 | `--outline`, `--no-outline`, `--outline-depth` | `Outline` |
 | `--toc`, `--toc-header-text`, `--cover` | `TOC`, `Cover` |
+| `--toc-style-sheet <file>` | `TOC.Template`, an HTML `html/template`. `--dump-default-toc` prints the built-in one. |
+| `--copies`, `--collate`, `--no-collate` | `Copies`, `Collate`. One file: the document repeated, or each page repeated. |
+| `--minimum-font-size <pt>` | `MinimumFontSize`. Raises computed sizes below the floor. Does not shrink larger text. |
+| `--tagged-pdf` | `Request.Tagged`. Keeps Chrome's structure tree. Off by default. |
+| page flags after `cover`, `toc`, or a page | `Input.Page`, `Input.Header`, `Input.Footer`, and `TOC.Page`. A cover does not inherit the document header or footer. |
 | `--page-offset` | `PageOffset` |
 | `--disable-external-links`, `--disable-internal-links` | the same fields |
 | `--javascript-delay` | `Wait.Delay` (milliseconds) |
@@ -135,9 +143,11 @@ Extensions that wkhtmltopdf did not have: `--wait-for` (CSS selector), `--wait-n
 
 These fail with a reason instead of being ignored:
 
-`--copies`, `--collate`, `--minimum-font-size`, `--enable-forms`, the checkbox and radio SVG flags, `--debug-javascript`, `--stop-slow-scripts`, `--no-stop-slow-scripts`, `--dump-outline`, `--read-args-from-stdin`, `--cache-dir`, `--enable-plugins`, `--disable-plugins`, `--keep-relative-links`, `--resolve-relative-links`, `--exclude-from-outline`, `--include-in-outline`, `--disable-dotted-lines`, `--disable-toc-back-links`, `--xsl-style-sheet`, `--dump-default-toc-xsl`.
+`--enable-forms`, the checkbox and radio SVG flags, `--debug-javascript`, `--stop-slow-scripts`, `--no-stop-slow-scripts`, `--dump-outline`, `--read-args-from-stdin`, `--cache-dir`, `--enable-plugins`, `--disable-plugins`, `--keep-relative-links`, `--resolve-relative-links`, `--exclude-from-outline`, `--include-in-outline`, `--disable-dotted-lines`, `--disable-toc-back-links`, `--xsl-style-sheet`, `--dump-default-toc-xsl`.
 
-Per-object options are not supported. wkhtmltopdf can give the cover different margins from the body. Here every flag applies to the whole conversion.
+`--enable-forms` and the SVG widget flags stay rejected because Chromium's `Page.printToPDF` has no forms switch. It paints a static page and does not emit AcroForm fields. `--xsl-style-sheet` and `--dump-default-toc-xsl` stay rejected because the table of contents is HTML, not XSLT. Use `--toc-style-sheet` and `--dump-default-toc`.
+
+Page size, margins, zoom, background, media, smart shrinking, viewport, and header/footer flags apply to the `cover`, `toc`, or page they follow. Flags before the first object are the defaults.
 
 Exit status is 0 on success, 2 on a usage error, and 1 when the conversion fails.
 
@@ -178,13 +188,16 @@ GitHub Actions installs Chrome and poppler and runs format, vet, lint, and `go t
 - Smart shrinking scales the page down only when the layout is wider than the printable width. It is not wkhtmltopdf's 1024 px viewport hack. The library default is off. The CLI default is on.
 - `[section]` and `[subsection]` use the heading outline. A composed header is stamped in the margin. Native Chromium headers are used when the template does not need those tokens.
 - A table of contents for one HTML input is part of that document and links to heading ids. A table of contents in front of several inputs uses estimated row positions for the click targets. The outline entries are exact.
-- Interactive form fields, copies, and an XSLT table of contents are not implemented.
+- Interactive form fields are not implemented. `Page.printToPDF` has no AcroForm switch.
+- `--copies` repeats pages inside one PDF. It does not talk to a printer.
+- A custom table of contents is an HTML template (`TOC.Template`, `--toc-style-sheet`), not an XSLT stylesheet. The template data has `Title` and `Entries`, and each entry has `Level`, `Title`, `Page`, `Href`, and `Indent`.
+- A single HTML file shares one page box with an injected table of contents. Set `TOC.Page` when the contents need their own paper size; printkit then renders them separately and merges them in front. Several inputs already do that. `Input.Page`, `Input.Header`, and `Input.Footer` override the request for that document. A nil header on a cover suppresses the document header.
 - Header and footer HTML should set a font size. Chromium's default header text is tiny. The left/center/right fields use 9 pt unless `--header-font-size` says otherwise.
 - `LoadErrorSkip` drops one input of a multi-input PDF. If every input is skipped, the call returns `ErrNoInput`.
 
 ## Performance vs wkhtmltopdf
 
-Measured on 25 October 2026. Full tables, the parity notes, and the rerun command are in [BENCHMARKS.md](BENCHMARKS.md).
+Measured on 26 October 2026, after tagged PDF became opt-in. Full tables, the parity notes, and the rerun command are in [BENCHMARKS.md](BENCHMARKS.md). The 25 October run left Chrome's structure tree in the file; those table numbers are the before column in BENCHMARKS.md.
 
 The machine was a KVM guest, Ubuntu 24.04.5, Linux 6.12.94+, 4 cores (Intel Xeon, 1 thread per core), 15.6 GiB RAM, no swap. printkit 0.1.0 on Go 1.26.0 drove Google Chrome 156.0.8078.47. wkhtmltopdf was 0.12.6.1 with patched Qt, the official jammy package `wkhtmltox_0.12.6.1-2.jammy_amd64.deb`. Ubuntu 24.04 has no official packaging build. Sixteen-wide runs were skipped. Eight-wide runs are oversubscribed on 4 cores.
 
@@ -194,51 +207,51 @@ Cold wall time is one process per document, which is what a shell script pays.
 
 | Fixture | Tool | Wall p50 | Wall p95 | CPU p50 | RSS p50 | PSS p50 | Size |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| tiny | wkhtmltopdf | 222 ms | 224 ms | 21 ms | 34 MiB | 29 MiB | 10 KiB |
-| tiny | htmlprint | 356 ms | 375 ms | 650 ms | 1.27 GiB | 392 MiB | 14 KiB |
-| report | wkhtmltopdf | 718 ms | 724 ms | 117 ms | 44 MiB | 39 MiB | 176 KiB |
-| report | htmlprint | 782 ms | 844 ms | 1.33 s | 1.43 GiB | 506 MiB | 235 KiB |
-| css | wkhtmltopdf | 292 ms | 295 ms | 98 ms | 42 MiB | 37 MiB | 61 KiB |
-| css | htmlprint | 404 ms | 432 ms | 820 ms | 1.37 GiB | 390 MiB | 123 KiB |
-| images | wkhtmltopdf | 983 ms | 993 ms | 782 ms | 82 MiB | 77 MiB | 3.8 MiB |
-| images | htmlprint | 462 ms | 493 ms | 950 ms | 1.37 GiB | 454 MiB | 3.8 MiB |
-| table | wkhtmltopdf | 1.48 s | 1.65 s | 1.28 s | 82 MiB | 77 MiB | 655 KiB |
-| table | htmlprint | 2.72 s | 2.84 s | 3.76 s | 1.99 GiB | 1.04 GiB | 8.4 MiB |
+| tiny | wkhtmltopdf | 225 ms | 228 ms | 25 ms | 34 MiB | 29 MiB | 10 KiB |
+| tiny | htmlprint | 415 ms | 461 ms | 830 ms | 1.32 GiB | 364 MiB | 13 KiB |
+| report | wkhtmltopdf | 724 ms | 756 ms | 122 ms | 44 MiB | 39 MiB | 176 KiB |
+| report | htmlprint | 839 ms | 945 ms | 1.48 s | 1.43 GiB | 493 MiB | 225 KiB |
+| css | wkhtmltopdf | 297 ms | 300 ms | 103 ms | 42 MiB | 37 MiB | 61 KiB |
+| css | htmlprint | 497 ms | 543 ms | 990 ms | 1.37 GiB | 433 MiB | 118 KiB |
+| images | wkhtmltopdf | 1.00 s | 1.06 s | 800 ms | 82 MiB | 76 MiB | 3.8 MiB |
+| images | htmlprint | 531 ms | 581 ms | 1.06 s | 1.37 GiB | 457 MiB | 3.8 MiB |
+| table | wkhtmltopdf | 1.51 s | 1.54 s | 1.31 s | 82 MiB | 77 MiB | 655 KiB |
+| table | htmlprint | 2.99 s | 3.12 s | 4.17 s | 2.00 GiB | 1.04 GiB | 462 KiB |
 
 A warm `Converter` (pool size 1, browser already up) against the same wkhtmltopdf cold numbers:
 
 | Fixture | Wall p50 | Wall p95 | CPU p50 | RSS p50 | PSS p50 | Size |
 | --- | --- | --- | --- | --- | --- | --- |
-| tiny | 91 ms | 105 ms | 280 ms | 1.39 GiB | 466 MiB | 14 KiB |
-| report | 508 ms | 541 ms | 940 ms | 1.53 GiB | 588 MiB | 235 KiB |
-| css | 142 ms | 151 ms | 420 ms | 1.47 GiB | 521 MiB | 123 KiB |
-| images | 171 ms | 184 ms | 470 ms | 1.52 GiB | 601 MiB | 3.8 MiB |
-| table | 2.37 s | 2.51 s | 3.52 s | 1.96 GiB | 1.13 GiB | 8.4 MiB |
+| tiny | 109 ms | 126 ms | 320 ms | 1.38 GiB | 469 MiB | 13 KiB |
+| report | 513 ms | 543 ms | 970 ms | 1.53 GiB | 590 MiB | 225 KiB |
+| css | 127 ms | 144 ms | 390 ms | 1.48 GiB | 518 MiB | 118 KiB |
+| images | 176 ms | 187 ms | 460 ms | 1.52 GiB | 598 MiB | 3.8 MiB |
+| table | 2.45 s | 2.64 s | 3.63 s | 1.95 GiB | 1.13 GiB | 462 KiB |
 
 Documents per second. `htmlprint` is N cold processes. `printkit` is one `Converter` with pool size N.
 
 | Fixture | N | wkhtmltopdf | htmlprint | printkit |
 | --- | --- | --- | --- | --- |
-| tiny | 1 | 4.51 | 2.81 | 10.21 |
-| tiny | 4 | 17.78 | 3.86 | 12.04 |
-| tiny | 8 | 33.37 | 3.92 | 11.17 |
-| report | 1 | 1.39 | 1.28 | 2.05 |
-| report | 4 | 5.49 | 2.21 | 4.28 |
-| report | 8 | 9.77 | 2.31 | 4.17 |
-| css | 1 | 3.39 | 2.45 | 8.30 |
-| css | 4 | 12.88 | 3.58 | 9.83 |
-| css | 8 | 19.76 | 3.72 | 10.38 |
-| images | 1 | 1.03 | 2.12 | 5.91 |
-| images | 4 | 3.86 | 3.03 | 7.52 |
-| images | 8 | 4.18 | 3.21 | 7.42 |
-| table | 1 | 0.68 | 0.37 | 0.40 |
-| table | 4 | 2.51 | 0.82 | 0.97 |
-| table | 8 | 2.69 | 0.80 | 1.00 |
+| tiny | 1 | 4.49 | 2.47 | 9.73 |
+| tiny | 4 | 17.69 | 3.38 | 10.39 |
+| tiny | 8 | 33.34 | 3.90 | 11.73 |
+| report | 1 | 1.39 | 1.34 | 2.18 |
+| report | 4 | 5.42 | 2.26 | 4.39 |
+| report | 8 | 9.77 | 2.29 | 4.46 |
+| css | 1 | 3.43 | 2.47 | 7.34 |
+| css | 4 | 13.31 | 3.42 | 9.36 |
+| css | 8 | 19.72 | 3.52 | 9.57 |
+| images | 1 | 1.02 | 2.03 | 5.68 |
+| images | 4 | 3.80 | 2.86 | 7.01 |
+| images | 8 | 4.12 | 3.00 | 7.09 |
+| table | 1 | 0.67 | 0.37 | 0.41 |
+| table | 4 | 2.46 | 0.80 | 0.97 |
+| table | 8 | 2.62 | 0.78 | 1.01 |
 
-wkhtmltopdf wins the cold CLI comparison on the tiny page, the report, the CSS page, and the table. It uses less CPU on every fixture, and far less memory: about 30–80 MiB PSS for one process, against 390 MiB to 1.0 GiB for one Chrome. It also wins throughput anywhere several processes run at once. Eight wkhtmltopdf processes still fit. Eight htmlprint processes on the table peaked at 6.5 GiB PSS.
+wkhtmltopdf wins the cold CLI comparison on the tiny page, the report, the CSS page, and the table. It uses less CPU on every fixture, and far less memory: about 29–77 MiB PSS for one process, against 364 MiB to 1.04 GiB for one Chrome. It also wins throughput anywhere several processes run at once, except the photo log. Eight wkhtmltopdf processes still fit. Eight htmlprint processes on the table peaked at 6.45 GiB PSS.
 
-printkit wins after Chrome is already running, on every fixture except the table. Warm wall time is 91 ms, 508 ms, 142 ms, and 171 ms for tiny, report, css, and images. The photo log is faster even cold (462 ms vs 983 ms), and the warm pool stays ahead of wkhtmltopdf at 1, 4, and 8 workers (5.9, 7.5, and 7.4 docs/s vs 1.0, 3.9, and 4.2). Launching htmlprint once per document is the wrong way to scale it. The pool is the API to use.
+printkit wins after Chrome is already running, on every fixture except the table. Warm wall time is 109 ms, 513 ms, 127 ms, and 176 ms for tiny, report, css, and images. The photo log is faster even cold (531 ms vs 1.00 s), and the warm pool stays ahead of wkhtmltopdf at 1, 4, and 8 workers (5.68, 7.01, and 7.09 docs/s vs 1.02, 3.80, and 4.12). Launching htmlprint once per document is the wrong way to scale it. The pool is the API to use.
 
 The CSS fixture is not a win for wkhtmltopdf. Both embed Liberation Sans and both contain the marker text. wkhtmltopdf stacks the header, does not paint the four-column grid or the flex row, and leaves the page background white. printkit paints the gradient, the flex header, and the grid. The photo log and the 5,000-row table both contain all of their content. wkhtmltopdf uses 6 pages for the photos and 75 for the table. printkit uses 4 and 52.
 
-Output size is close on the tiny page, the report, and the photos. The CSS page is 61 KiB vs 123 KiB. The table is 655 KiB vs 8.4 MiB. Chrome 156 writes a tagged structure tree, about 55,000 objects for this table. Turning `generateTaggedPDF` off in a one-off run cut that file to 413 KiB and the wall time to 1.66 s, and it also dropped the outline. Outlines stay on, so that switch was not shipped. Stripping the structure tree while keeping the outline is the cheap follow-up. It is not done here.
+Output size is close on the tiny page (10 KiB vs 13 KiB), the report (176 KiB vs 225 KiB), and the photos (both 3.8 MiB). The CSS page is 61 KiB vs 118 KiB. The table is where the structure tree used to dominate: on 25 October, with the tree left in the file, htmlprint wrote 8,783,412 bytes (8.4 MiB) against wkhtmltopdf's 670,285 bytes (655 KiB). This run writes 473,001 bytes (462 KiB) and keeps the outline. Wall time stayed near the previous run (cold 2.99 s, warm 2.45 s). Turning `generateTaggedPDF` off drops the outline as well, so that switch stays opt-in under `--tagged-pdf`. The default strips the tree after print.

@@ -30,7 +30,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/tushar-singh-dev/printkit"
+	"github.com/tushar1210/printkit"
 )
 
 const wkhtmlBuild = "wkhtmltox 1:0.12.6.1-2.jammy amd64 from https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-2/wkhtmltox_0.12.6.1-2.jammy_amd64.deb (patched Qt). Ubuntu 24.04 has no official packaging build; jammy is the closest and the package links against libssl.so.3."

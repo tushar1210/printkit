@@ -2,6 +2,7 @@ package printkit
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
@@ -83,5 +84,34 @@ func TestLoadAndOptionErrors(t *testing.T) {
 	load := &LoadError{URL: "https://example.test", Status: 404, Detail: "missing"}
 	if !errors.Is(load, ErrLoadFailed) || load.Error() == "" {
 		t.Fatal(load)
+	}
+}
+
+func TestTOCTemplate(t *testing.T) {
+	frag, err := tocFragment(&TOC{
+		Title:    "Contents",
+		Template: `<ol>{{range .Entries}}<li>{{.Level}} {{.Title}} {{.Page}} {{.Href}}</li>{{end}}</ol>`,
+	}, []tocItem{{level: 2, title: "Beta & Co", id: "b", page: 3}}, 1, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"2 Beta &amp; Co 4 #b"} {
+		if !strings.Contains(frag, want) {
+			t.Fatalf("%q missing in %s", want, frag)
+		}
+	}
+	if _, err := tocFragment(&TOC{Template: "{{"}, nil, 0, 0); err == nil {
+		t.Fatal("expected template error")
+	}
+	err = validateRequest(Request{Inputs: []Input{FromHTML("x")}, Copies: -1})
+	if err == nil {
+		t.Fatal("expected copies error")
+	}
+}
+
+func TestRepeatBookmarkScale(t *testing.T) {
+	got := scaleBookmarkPages([]pdfcpu.Bookmark{{Title: "A", PageFrom: 2, Kids: []pdfcpu.Bookmark{{Title: "B", PageFrom: 3}}}}, 2)
+	if got[0].PageFrom != 3 || got[0].Kids[0].PageFrom != 5 {
+		t.Fatalf("%#v", got)
 	}
 }

@@ -39,6 +39,7 @@ type navSpec struct {
 	stripExternal bool
 	stripInternal bool
 	load          LoadErrorPolicy
+	minFontPx     float64
 }
 
 type pageInfo struct {
@@ -528,7 +529,30 @@ func decorate(ctx context.Context, spec navSpec) error {
 			return fmt.Errorf("printkit: inject javascript: %w", err)
 		}
 	}
+	if spec.minFontPx > 0 {
+		if err := evalJS(ctx, minFontScript(spec.minFontPx)); err != nil {
+			return fmt.Errorf("printkit: minimum font size: %w", err)
+		}
+	}
 	return nil
+}
+
+func minFontScript(floorPx float64) string {
+	return fmt.Sprintf(`(() => {
+		const floor = %g;
+		const root = document.body || document.documentElement;
+		if (!root) return;
+		const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+		let n = walker.currentNode;
+		while (n) {
+			const tag = n.tagName;
+			if (tag !== 'SCRIPT' && tag !== 'STYLE' && tag !== 'NOSCRIPT') {
+				const px = parseFloat(getComputedStyle(n).fontSize);
+				if (px > 0 && px + 0.2 < floor) n.style.fontSize = floor + 'px';
+			}
+			n = walker.nextNode();
+		}
+	})()`, floorPx)
 }
 
 func styleScript(css string) string {

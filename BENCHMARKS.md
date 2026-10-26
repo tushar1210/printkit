@@ -1,6 +1,6 @@
 # printkit vs wkhtmltopdf
 
-Numbers below are from one run of `./bench/run.sh` on 25 October 2026. Raw samples are in [bench/results.json](bench/results.json). The summary is also in the README.
+Numbers below are from one run of `./bench/run.sh` on 26 October 2026. Tagged PDF was off, which is the default. Raw samples are in [bench/results.json](bench/results.json). The summary is also in the README. The 25 October run left Chrome's structure tree in the file; the table-size comparison is in the conclusions.
 
 ## Machine
 
@@ -8,7 +8,7 @@ Numbers below are from one run of `./bench/run.sh` on 25 October 2026. Raw sampl
 | --- | --- |
 | OS | Ubuntu 24.04.5 LTS, Linux 6.12.94+, x86_64 |
 | CPU | Intel Xeon (KVM), 4 cores, 1 thread per core, 1 socket |
-| RAM | 15.6 GiB, no swap. About 4.5 GiB was available when the run started |
+| RAM | 15.6 GiB, no swap. About 4.3 GiB was available when the run started |
 | Go | go1.26.0 |
 | printkit | 0.1.0 |
 | Chrome | Google Chrome 156.0.8078.47 (`/usr/bin/google-chrome-stable`) |
@@ -66,16 +66,16 @@ The photo log is complete in both. wkhtmltopdf leaves more empty space and uses 
 
 | Fixture | Tool | Wall p50 | Wall p95 | CPU p50 | RSS p50 | PSS p50 | Size |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| tiny | wkhtmltopdf | 222 ms | 224 ms | 21 ms | 34 MiB | 29 MiB | 9,839 B |
-| tiny | htmlprint | 356 ms | 375 ms | 650 ms | 1.27 GiB | 392 MiB | 14,546 B |
-| report | wkhtmltopdf | 718 ms | 724 ms | 117 ms | 44 MiB | 39 MiB | 180,121 B |
-| report | htmlprint | 782 ms | 844 ms | 1.33 s | 1.43 GiB | 506 MiB | 240,632 B |
-| css | wkhtmltopdf | 292 ms | 295 ms | 98 ms | 42 MiB | 37 MiB | 62,386 B |
-| css | htmlprint | 404 ms | 432 ms | 820 ms | 1.37 GiB | 390 MiB | 125,490 B |
-| images | wkhtmltopdf | 983 ms | 993 ms | 782 ms | 82 MiB | 77 MiB | 3,948,007 B |
-| images | htmlprint | 462 ms | 493 ms | 950 ms | 1.37 GiB | 454 MiB | 3,954,215 B |
-| table | wkhtmltopdf | 1.48 s | 1.65 s | 1.28 s | 82 MiB | 77 MiB | 670,285 B |
-| table | htmlprint | 2.72 s | 2.84 s | 3.76 s | 1.99 GiB | 1.04 GiB | 8,783,412 B |
+| tiny | wkhtmltopdf | 225 ms | 228 ms | 25 ms | 34 MiB | 29 MiB | 9,839 B |
+| tiny | htmlprint | 415 ms | 461 ms | 830 ms | 1.32 GiB | 364 MiB | 13,822 B |
+| report | wkhtmltopdf | 724 ms | 756 ms | 122 ms | 44 MiB | 39 MiB | 180,121 B |
+| report | htmlprint | 839 ms | 945 ms | 1.48 s | 1.43 GiB | 493 MiB | 230,028 B |
+| css | wkhtmltopdf | 297 ms | 300 ms | 103 ms | 42 MiB | 37 MiB | 62,386 B |
+| css | htmlprint | 497 ms | 543 ms | 990 ms | 1.37 GiB | 433 MiB | 120,327 B |
+| images | wkhtmltopdf | 1.00 s | 1.06 s | 800 ms | 82 MiB | 76 MiB | 3,948,007 B |
+| images | htmlprint | 531 ms | 581 ms | 1.06 s | 1.37 GiB | 457 MiB | 3,948,626 B |
+| table | wkhtmltopdf | 1.51 s | 1.54 s | 1.31 s | 82 MiB | 77 MiB | 670,285 B |
+| table | htmlprint | 2.99 s | 3.12 s | 4.17 s | 2.00 GiB | 1.04 GiB | 473,001 B |
 
 ## Warm library
 
@@ -83,11 +83,11 @@ One `Converter`, pool size 1. wkhtmltopdf's cold p50 is repeated so the comparis
 
 | Fixture | Wall p50 | Wall p95 | CPU p50 | RSS p50 | PSS p50 | wkhtml wall p50 |
 | --- | --- | --- | --- | --- | --- | --- |
-| tiny | 91 ms | 105 ms | 280 ms | 1.39 GiB | 466 MiB | 222 ms |
-| report | 508 ms | 541 ms | 940 ms | 1.53 GiB | 588 MiB | 718 ms |
-| css | 142 ms | 151 ms | 420 ms | 1.47 GiB | 521 MiB | 292 ms |
-| images | 171 ms | 184 ms | 470 ms | 1.52 GiB | 601 MiB | 983 ms |
-| table | 2.37 s | 2.51 s | 3.52 s | 1.96 GiB | 1.13 GiB | 1.48 s |
+| tiny | 109 ms | 126 ms | 320 ms | 1.38 GiB | 469 MiB | 225 ms |
+| report | 513 ms | 543 ms | 970 ms | 1.53 GiB | 590 MiB | 724 ms |
+| css | 127 ms | 144 ms | 390 ms | 1.48 GiB | 518 MiB | 297 ms |
+| images | 176 ms | 187 ms | 460 ms | 1.52 GiB | 598 MiB | 1.00 s |
+| table | 2.45 s | 2.64 s | 3.63 s | 1.95 GiB | 1.13 GiB | 1.51 s |
 
 ## Throughput
 
@@ -95,65 +95,65 @@ Documents per second, p50 then p95. CPU is per document. Memory is the peak of t
 
 | N | Fixture | Tool | Docs/s p50 | Docs/s p95 | CPU/doc p50 | PSS p50 | RSS p50 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | tiny | wkhtmltopdf | 4.51 | 4.53 | 21 ms | 29 MiB | 33 MiB |
-| 1 | tiny | htmlprint | 2.81 | 3.00 | 650 ms | 392 MiB | 1.28 GiB |
-| 1 | tiny | printkit | 10.21 | 11.14 | 300 ms | 435 MiB | 1.35 GiB |
-| 4 | tiny | wkhtmltopdf | 17.78 | 17.89 | 21 ms | 48 MiB | 135 MiB |
-| 4 | tiny | htmlprint | 3.86 | 4.07 | 680 ms | 925 MiB | 4.86 GiB |
-| 4 | tiny | printkit | 12.04 | 13.58 | 268 ms | 635 MiB | 1.90 GiB |
-| 8 | tiny | wkhtmltopdf | 33.37 | 33.73 | 20 ms | 72 MiB | 270 MiB |
-| 8 | tiny | htmlprint | 3.92 | 4.17 | 675 ms | 1.25 GiB | 9.26 GiB |
-| 8 | tiny | printkit | 11.17 | 12.12 | 295 ms | 892 MiB | 2.61 GiB |
-| 1 | report | wkhtmltopdf | 1.39 | 1.40 | 119 ms | 39 MiB | 44 MiB |
-| 1 | report | htmlprint | 1.28 | 1.30 | 1.34 s | 507 MiB | 1.44 GiB |
-| 1 | report | printkit | 2.05 | 2.10 | 870 ms | 544 MiB | 1.49 GiB |
-| 4 | report | wkhtmltopdf | 5.49 | 5.52 | 115 ms | 81 MiB | 178 MiB |
-| 4 | report | htmlprint | 2.21 | 2.27 | 1.35 s | 1.28 GiB | 5.61 GiB |
-| 4 | report | printkit | 4.28 | 4.38 | 845 ms | 950 MiB | 2.37 GiB |
-| 8 | report | wkhtmltopdf | 9.77 | 10.02 | 115 ms | 134 MiB | 354 MiB |
-| 8 | report | htmlprint | 2.31 | 2.36 | 1.37 s | 2.28 GiB | 11.11 GiB |
-| 8 | report | printkit | 4.17 | 4.32 | 889 ms | 1.31 GiB | 3.41 GiB |
-| 1 | css | wkhtmltopdf | 3.39 | 3.43 | 100 ms | 37 MiB | 42 MiB |
-| 1 | css | htmlprint | 2.45 | 2.62 | 800 ms | 387 MiB | 1.38 GiB |
-| 1 | css | printkit | 8.30 | 8.92 | 370 ms | 470 MiB | 1.42 GiB |
-| 4 | css | wkhtmltopdf | 12.88 | 13.34 | 98 ms | 76 MiB | 168 MiB |
-| 4 | css | htmlprint | 3.58 | 3.72 | 765 ms | 932 MiB | 5.15 GiB |
-| 4 | css | printkit | 9.83 | 10.39 | 352 ms | 677 MiB | 2.09 GiB |
-| 8 | css | wkhtmltopdf | 19.76 | 20.37 | 99 ms | 118 MiB | 337 MiB |
-| 8 | css | htmlprint | 3.72 | 3.79 | 719 ms | 1.32 GiB | 9.21 GiB |
-| 8 | css | printkit | 10.38 | 10.75 | 339 ms | 906 MiB | 2.97 GiB |
-| 1 | images | wkhtmltopdf | 1.03 | 1.03 | 772 ms | 76 MiB | 82 MiB |
-| 1 | images | htmlprint | 2.12 | 2.29 | 970 ms | 442 MiB | 1.37 GiB |
-| 1 | images | printkit | 5.91 | 6.18 | 470 ms | 556 MiB | 1.47 GiB |
-| 4 | images | wkhtmltopdf | 3.86 | 3.89 | 777 ms | 230 MiB | 322 MiB |
-| 4 | images | htmlprint | 3.03 | 3.17 | 918 ms | 1.05 GiB | 5.31 GiB |
-| 4 | images | printkit | 7.52 | 7.78 | 438 ms | 786 MiB | 2.22 GiB |
-| 8 | images | wkhtmltopdf | 4.18 | 4.29 | 779 ms | 362 MiB | 574 MiB |
-| 8 | images | htmlprint | 3.21 | 3.28 | 889 ms | 1.72 GiB | 9.58 GiB |
-| 8 | images | printkit | 7.42 | 7.99 | 449 ms | 1.13 GiB | 3.05 GiB |
-| 1 | table | wkhtmltopdf | 0.68 | 0.68 | 1.27 s | 77 MiB | 82 MiB |
-| 1 | table | htmlprint | 0.37 | 0.39 | 3.70 s | 1.02 GiB | 1.99 GiB |
-| 1 | table | printkit | 0.40 | 0.42 | 3.87 s | 1.11 GiB | 2.07 GiB |
-| 4 | table | wkhtmltopdf | 2.51 | 2.58 | 1.28 s | 236 MiB | 326 MiB |
-| 4 | table | htmlprint | 0.82 | 0.84 | 3.94 s | 3.42 GiB | 7.77 GiB |
-| 4 | table | printkit | 0.97 | 1.02 | 3.67 s | 3.05 GiB | 4.42 GiB |
-| 8 | table | wkhtmltopdf | 2.69 | 2.72 | 1.30 s | 446 MiB | 653 MiB |
-| 8 | table | htmlprint | 0.80 | 0.83 | 4.14 s | 6.49 GiB | 15.43 GiB |
-| 8 | table | printkit | 1.00 | 1.02 | 3.80 s | 5.47 GiB | 7.28 GiB |
+| 1 | tiny | wkhtmltopdf | 4.49 | 4.52 | 22 ms | 29 MiB | 34 MiB |
+| 1 | tiny | htmlprint | 2.47 | 2.55 | 780 ms | 368 MiB | 1.33 GiB |
+| 1 | tiny | printkit | 9.73 | 11.03 | 310 ms | 437 MiB | 1.36 GiB |
+| 4 | tiny | wkhtmltopdf | 17.69 | 17.84 | 22 ms | 49 MiB | 135 MiB |
+| 4 | tiny | htmlprint | 3.38 | 3.98 | 772 ms | 888 MiB | 4.56 GiB |
+| 4 | tiny | printkit | 10.39 | 12.51 | 298 ms | 631 MiB | 1.93 GiB |
+| 8 | tiny | wkhtmltopdf | 33.34 | 33.80 | 21 ms | 72 MiB | 270 MiB |
+| 8 | tiny | htmlprint | 3.90 | 4.04 | 692 ms | 1.14 GiB | 8.99 GiB |
+| 8 | tiny | printkit | 11.73 | 12.75 | 286 ms | 793 MiB | 2.64 GiB |
+| 1 | report | wkhtmltopdf | 1.39 | 1.40 | 116 ms | 39 MiB | 45 MiB |
+| 1 | report | htmlprint | 1.34 | 1.38 | 1.30 s | 504 MiB | 1.43 GiB |
+| 1 | report | printkit | 2.18 | 2.22 | 830 ms | 549 MiB | 1.48 GiB |
+| 4 | report | wkhtmltopdf | 5.42 | 5.52 | 115 ms | 81 MiB | 178 MiB |
+| 4 | report | htmlprint | 2.26 | 2.33 | 1.31 s | 1.26 GiB | 5.61 GiB |
+| 4 | report | printkit | 4.39 | 4.56 | 820 ms | 944 MiB | 2.38 GiB |
+| 8 | report | wkhtmltopdf | 9.77 | 9.90 | 116 ms | 134 MiB | 353 MiB |
+| 8 | report | htmlprint | 2.29 | 2.37 | 1.37 s | 2.27 GiB | 11.13 GiB |
+| 8 | report | printkit | 4.46 | 4.55 | 842 ms | 1.24 GiB | 3.43 GiB |
+| 1 | css | wkhtmltopdf | 3.43 | 3.48 | 96 ms | 37 MiB | 42 MiB |
+| 1 | css | htmlprint | 2.47 | 2.55 | 820 ms | 390 MiB | 1.37 GiB |
+| 1 | css | printkit | 7.34 | 8.09 | 390 ms | 476 MiB | 1.44 GiB |
+| 4 | css | wkhtmltopdf | 13.31 | 13.46 | 97 ms | 75 MiB | 168 MiB |
+| 4 | css | htmlprint | 3.42 | 3.56 | 812 ms | 1016 MiB | 5.05 GiB |
+| 4 | css | printkit | 9.36 | 10.33 | 365 ms | 658 MiB | 2.16 GiB |
+| 8 | css | wkhtmltopdf | 19.72 | 20.19 | 100 ms | 117 MiB | 335 MiB |
+| 8 | css | htmlprint | 3.52 | 3.61 | 805 ms | 1.48 GiB | 9.70 GiB |
+| 8 | css | printkit | 9.57 | 10.07 | 364 ms | 882 MiB | 2.92 GiB |
+| 1 | images | wkhtmltopdf | 1.02 | 1.02 | 781 ms | 77 MiB | 81 MiB |
+| 1 | images | htmlprint | 2.03 | 2.17 | 1.00 s | 462 MiB | 1.38 GiB |
+| 1 | images | printkit | 5.68 | 6.22 | 480 ms | 566 MiB | 1.47 GiB |
+| 4 | images | wkhtmltopdf | 3.80 | 3.91 | 779 ms | 229 MiB | 323 MiB |
+| 4 | images | htmlprint | 2.86 | 3.03 | 988 ms | 1.11 GiB | 5.38 GiB |
+| 4 | images | printkit | 7.01 | 7.31 | 482 ms | 846 MiB | 2.22 GiB |
+| 8 | images | wkhtmltopdf | 4.12 | 4.17 | 793 ms | 359 MiB | 575 MiB |
+| 8 | images | htmlprint | 3.00 | 3.18 | 966 ms | 1.86 GiB | 10.37 GiB |
+| 8 | images | printkit | 7.09 | 7.56 | 465 ms | 1.21 GiB | 3.17 GiB |
+| 1 | table | wkhtmltopdf | 0.67 | 0.67 | 1.29 s | 77 MiB | 82 MiB |
+| 1 | table | htmlprint | 0.37 | 0.39 | 3.67 s | 1.03 GiB | 1.99 GiB |
+| 1 | table | printkit | 0.41 | 0.42 | 3.77 s | 1.13 GiB | 2.08 GiB |
+| 4 | table | wkhtmltopdf | 2.46 | 2.54 | 1.30 s | 236 MiB | 326 MiB |
+| 4 | table | htmlprint | 0.80 | 0.81 | 4.01 s | 3.37 GiB | 7.77 GiB |
+| 4 | table | printkit | 0.97 | 0.98 | 3.68 s | 3.02 GiB | 4.42 GiB |
+| 8 | table | wkhtmltopdf | 2.62 | 2.69 | 1.32 s | 446 MiB | 653 MiB |
+| 8 | table | htmlprint | 0.78 | 0.82 | 4.27 s | 6.45 GiB | 15.48 GiB |
+| 8 | table | printkit | 1.01 | 1.05 | 3.70 s | 5.40 GiB | 7.24 GiB |
 
 ## Conclusions
 
-wkhtmltopdf is the faster and much smaller cold CLI, except on the photo log. One process is about 30–80 MiB PSS and a few hundred milliseconds for a simple page. Eight of them still scale: 33 tiny documents per second, 20 CSS pages per second. printkit pays Chrome startup on every cold process (about 360 ms and 390 MiB PSS for a one-line page, before the document itself gets expensive) and does not scale by launching more htmlprint processes. Eight cold htmlprint processes on the table peaked at 6.5 GiB PSS.
+wkhtmltopdf is the faster and much smaller cold CLI, except on the photo log. One process is about 29–77 MiB PSS and a few hundred milliseconds for a simple page. Eight of them still scale: 33 tiny documents per second, 20 CSS pages per second. printkit pays Chrome startup on every cold process (415 ms and 364 MiB PSS for a one-line page) and does not scale by launching more htmlprint processes. Eight cold htmlprint processes on the table peaked at 6.45 GiB PSS.
 
-Keep a `Converter` and the picture changes for everything except the table. Warm wall time beats wkhtmltopdf on tiny (91 ms vs 222 ms), the report (508 ms vs 718 ms), CSS (142 ms vs 292 ms), and images (171 ms vs 983 ms). The warm pool is also the throughput winner on images at every concurrency, and on tiny, report, and CSS at one job. From 4 jobs up, wkhtmltopdf's small processes win those three again. The table stays with wkhtmltopdf at every setting: 1.48 s cold vs 2.37 s warm, and 2.69 docs/s vs 1.00 at 8-wide.
+Keep a `Converter` and the picture changes for everything except the table. Warm wall time beats wkhtmltopdf on tiny (109 ms vs 225 ms), the report (513 ms vs 724 ms), CSS (127 ms vs 297 ms), and images (176 ms vs 1.00 s). The warm pool is also the throughput winner on images at every concurrency, and on tiny, report, and CSS at one job. From 4 jobs up, wkhtmltopdf's small processes win those three again. The table stays with wkhtmltopdf on wall time at every setting: 1.51 s cold vs 2.45 s warm, and 2.62 docs/s vs 1.01 at 8-wide.
 
 The CSS timing is not a quality win for wkhtmltopdf. The page it returns is missing the layout the fixture is there to test. The photo log and the table are complete in both tools, with different pagination.
 
-File size is close on tiny, the report, and the photos. CSS is 62 KiB vs 125 KiB. The table is 670 KiB vs 8.4 MiB.
+File size is close on tiny (9,839 B vs 13,822 B), the report (180,121 B vs 230,028 B), and the photos (3,948,007 B vs 3,948,626 B). CSS is 62,386 B vs 120,327 B. The table is 670,285 B vs 473,001 B. On 25 October, before the structure tree was stripped, the same htmlprint table was 8,783,412 B. Outlines and the 52-page count stayed.
 
 ## Not changed
 
-Chrome 156's print path writes a tagged PDF. The 5,000-row table came out as about 55,000 objects and 8.4 MiB. A one-off with `generateTaggedPDF` set false produced 412,511 bytes in 1.66 s wall (`/usr/bin/time`) and 52 pages, the same page count, and the outline was gone. Outlines are a supported feature, so the flag was not flipped. The follow-up that looks worth doing is to drop the structure tree after print and keep `/Outlines`. That rewrite was not attempted. Reusing tabs across documents was also left alone. A tab keeps the previous document's state.
+Reusing tabs across documents was left alone. A tab keeps the previous document's state. The structure-tree strip is in this run: tagged PDF is off unless `--tagged-pdf` / `Request.Tagged` is set, and the outline is kept. A one-off that only set `generateTaggedPDF` false was not shipped, because that also drops `/Outlines`.
 
 ## Rerun
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/tushar-singh-dev/printkit"
+	"github.com/tushar1210/printkit"
 )
 
 func ExampleMM() {

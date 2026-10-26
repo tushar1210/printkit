@@ -21,8 +21,8 @@ import (
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
 	"golang.org/x/image/webp"
 
-	"github.com/tushar-singh-dev/printkit"
-	"github.com/tushar-singh-dev/printkit/internal/cli"
+	"github.com/tushar1210/printkit"
+	"github.com/tushar1210/printkit/internal/cli"
 )
 
 var conv *printkit.Converter
@@ -544,6 +544,101 @@ func ExampleConverter_PDF() {
 	// Output:
 	// %PDF-
 }
+
+func TestUntaggedPDFKeepsOutlineAndShrinks(t *testing.T) {
+	var b strings.Builder
+	b.WriteString(`<!doctype html><html><head><meta charset="utf-8"><style>
+		body{font-family:sans-serif} td{border:1px solid #ddd;padding:1px 3px;font-size:8pt}
+		table{border-collapse:collapse}
+		</style></head><body><h1>Size Chapter</h1><table>`)
+	for i := 0; i < 800; i++ {
+		fmt.Fprintf(&b, `<tr><td>row %d</td><td>alpha</td><td>beta</td><td>gamma</td><td>delta</td></tr>`, i)
+	}
+	b.WriteString(`</table></body></html>`)
+	html := b.String()
+	plain, err := conv.PDF(context.Background(), printkit.Request{
+		Inputs: []printkit.Input{printkit.FromHTML(html)},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tagged, err := conv.PDF(context.Background(), printkit.Request{
+		Inputs: []printkit.Input{printkit.FromHTML(html)},
+		Tagged: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(plain) >= len(tagged)/2 {
+		t.Fatalf("size did not drop: untagged %d tagged %d", len(plain), len(tagged))
+	}
+	titles := bookmarkTitles(t, plain)
+	if !titles["Size Chapter"] {
+		t.Fatalf("outline missing after strip: %v", titles)
+	}
+	text := pdfText(t, plain)
+	if !strings.Contains(text, "row 799") || !strings.Contains(text, "Size Chapter") {
+		t.Fatalf("text extraction lost a row:\n%s", text[len(text)-400:])
+	}
+	info := pdfInfo(t, plain)
+	if !strings.Contains(info, "Tagged:          no") && !strings.Contains(strings.ToLower(info), "tagged: no") {
+		t.Fatalf("pdfinfo tagged flag:\n%s", info)
+	}
+}
+
+func TestPerObjectPageAndCopies(t *testing.T) {
+	letter := printkit.FromHTML(`<h1>Letter Head</h1><p>letter body</p>`)
+	letterPage := printkit.Page{Size: printkit.Letter, Margin: printkit.MarginAll(printkit.MM(10))}
+	letter.Page = &letterPage
+	letter.Header = &printkit.HeaderFooter{Center: "HEAD-LETTER"}
+	wide := printkit.FromHTML(`<h1>Wide Head</h1><p>wide body</p>`)
+	widePage := printkit.Page{Size: printkit.A4, Orientation: printkit.Landscape, Margin: printkit.MarginAll(printkit.MM(10))}
+	wide.Page = &widePage
+	wide.Header = &printkit.HeaderFooter{Center: "HEAD-WIDE"}
+	pdf, err := conv.PDF(context.Background(), printkit.Request{
+		Inputs: []printkit.Input{letter, wide},
+		Copies: 2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := pages(t, pdf); n != 4 {
+		t.Fatalf("collated copies pages = %d", n)
+	}
+	text := pdfText(t, pdf)
+	for _, want := range []string{"HEAD-LETTER", "HEAD-WIDE", "letter body", "wide body"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("missing %q", want)
+		}
+	}
+	dims, err := api.PageDims(context.Background(), bytes.NewReader(pdf), nil)
+	if err != nil || len(dims) != 4 {
+		t.Fatal(err)
+	}
+	// Letter is portrait (taller). A4 landscape is wider than it is tall.
+	if dims[0].Width >= dims[0].Height {
+		t.Fatalf("letter page not portrait: %.1f x %.1f", dims[0].Width, dims[0].Height)
+	}
+	if dims[1].Width <= dims[1].Height {
+		t.Fatalf("a4 page not landscape: %.1f x %.1f", dims[1].Width, dims[1].Height)
+	}
+	if dims[2].Width != dims[0].Width || dims[3].Height != dims[1].Height {
+		t.Fatalf("second copy dims differ: %#v", dims)
+	}
+	uncollated, err := conv.PDF(context.Background(), printkit.Request{
+		Inputs:  []printkit.Input{printkit.FromHTML(`<p>only page</p><div style="break-after:page"></div><p>second page</p>`)},
+		Copies:  2,
+		Collate: boolPtr(false),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := pages(t, uncollated); n != 4 {
+		t.Fatalf("uncollated pages = %d", n)
+	}
+}
+
+func boolPtr(v bool) *bool { return &v }
 
 func pages(t *testing.T, pdf []byte) int {
 	t.Helper()

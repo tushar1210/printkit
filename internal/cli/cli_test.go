@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tushar-singh-dev/printkit"
+	"github.com/tushar1210/printkit"
 )
 
 func TestParsePDFDefaults(t *testing.T) {
@@ -80,9 +80,13 @@ func TestParseImageAndModeSwitch(t *testing.T) {
 }
 
 func TestParseRejectsUnsupported(t *testing.T) {
-	_, err := Parse("htmlprint", []string{"--copies", "2", "a.html", "out.pdf"})
-	if err == nil || !strings.Contains(err.Error(), "unsupported flag --copies") {
-		t.Fatalf("copies: %v", err)
+	_, err := Parse("htmlprint", []string{"--enable-forms", "a.html", "out.pdf"})
+	if err == nil || !strings.Contains(err.Error(), "unsupported flag --enable-forms") {
+		t.Fatalf("forms: %v", err)
+	}
+	_, err = Parse("htmlprint", []string{"--xsl-style-sheet", "toc.xsl", "a.html", "out.pdf"})
+	if err == nil || !strings.Contains(err.Error(), "--toc-style-sheet") {
+		t.Fatalf("xsl: %v", err)
 	}
 	_, err = Parse("htmlprint", []string{"--not-a-flag", "a.html", "out.pdf"})
 	if err == nil || !strings.Contains(err.Error(), "unknown flag") {
@@ -151,8 +155,63 @@ func TestHelpDoesNotLaunchChrome(t *testing.T) {
 		t.Fatal(code)
 	}
 	var stderr bytes.Buffer
-	code = Run("htmlprint", []string{"--copies", "2", "a.html", "b.pdf"}, io.Discard, &stderr)
-	if code != 2 || !strings.Contains(stderr.String(), "--copies") {
+	code = Run("htmlprint", []string{"--enable-forms", "a.html", "b.pdf"}, io.Discard, &stderr)
+	if code != 2 || !strings.Contains(stderr.String(), "--enable-forms") {
 		t.Fatalf("code %d %s", code, stderr.String())
+	}
+	code = Run("htmlprint", []string{"--dump-default-toc"}, &out, &stderr)
+	if code != 0 || !strings.Contains(out.String(), "printkit-toc") {
+		t.Fatalf("dump toc code %d %q", code, out.String())
+	}
+}
+
+func TestParseCopiesAndPerObject(t *testing.T) {
+	cmd, err := Parse("htmlprint", []string{
+		"--copies", "3", "--no-collate",
+		"--minimum-font-size", "12",
+		"--margin-top", "12mm",
+		"--header-center", "[page]",
+		"cover", "c.html", "--margin-top", "0",
+		"toc", "--toc-header-text", "Contents", "--margin-bottom", "5mm",
+		"page", "a.html", "--header-center", "OnlyA", "--orientation", "Landscape",
+		"b.html",
+		"out.pdf",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := cmd.PDF
+	if req.Copies != 3 || req.Collate == nil || *req.Collate {
+		t.Fatalf("copies %#v collate %#v", req.Copies, req.Collate)
+	}
+	if req.MinimumFontSize != 12 {
+		t.Fatalf("font %v", req.MinimumFontSize)
+	}
+	if req.Cover == nil || req.Cover.File != "c.html" || req.Cover.Page == nil {
+		t.Fatalf("cover %#v", req.Cover)
+	}
+	if req.Cover.Page.Margin.Top.Millimeters() != 0 || req.Cover.Header != nil {
+		t.Fatalf("cover page %#v header %#v", req.Cover.Page, req.Cover.Header)
+	}
+	if req.TOC == nil || req.TOC.Title != "Contents" || req.TOC.Page == nil {
+		t.Fatalf("toc %#v", req.TOC)
+	}
+	if req.TOC.Page.Margin.Bottom.Millimeters() != 5 || req.TOC.Page.Margin.Top.Millimeters() != 12 {
+		t.Fatalf("toc margin %#v", req.TOC.Page.Margin)
+	}
+	if len(req.Inputs) != 2 {
+		t.Fatalf("inputs %#v", req.Inputs)
+	}
+	if req.Inputs[0].File != "a.html" || req.Inputs[0].Page == nil || req.Inputs[0].Page.Orientation != printkit.Landscape {
+		t.Fatalf("a %#v", req.Inputs[0])
+	}
+	if req.Inputs[0].Header == nil || req.Inputs[0].Header.Center != "OnlyA" {
+		t.Fatalf("a header %#v", req.Inputs[0].Header)
+	}
+	if req.Inputs[1].Page != nil || req.Inputs[1].Header != nil {
+		t.Fatalf("b should inherit: %#v", req.Inputs[1])
+	}
+	if req.Header == nil || req.Header.Center != "[page]" || req.Page.Margin.Top.Millimeters() != 12 {
+		t.Fatalf("global header %#v margin %#v", req.Header, req.Page.Margin)
 	}
 }

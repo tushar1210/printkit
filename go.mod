@@ -1,4 +1,4 @@
-module github.com/tushar-singh-dev/printkit
+module github.com/tushar1210/printkit
 
 go 1.26.0
 

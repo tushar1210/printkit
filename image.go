@@ -16,6 +16,9 @@ func (c *Converter) renderImage(ctx context.Context, req ImageRequest) ([]byte, 
 	if err != nil {
 		return nil, err
 	}
+	if req.MinimumFontSize < 0 {
+		return nil, optionf("MinimumFontSize", "must be zero or positive")
+	}
 	width := req.Width
 	if width <= 0 {
 		width = 1024
@@ -50,6 +53,7 @@ func (c *Converter) renderImage(ctx context.Context, req ImageRequest) ([]byte, 
 			deviceScale: scale,
 			transparent: req.OmitBackground && format != cdppage.CaptureScreenshotFormatJpeg,
 			load:        LoadErrorAbort,
+			minFontPx:   req.MinimumFontSize * 96 / 72,
 		})
 		if err != nil {
 			return err

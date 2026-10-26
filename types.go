@@ -58,6 +58,15 @@ type Input struct {
 	// BaseDir is the directory used to resolve relative URLs in HTML or
 	// Reader. It requires local file access.
 	BaseDir string
+	// Page, when set, replaces Request.Page for this input. Nil inherits.
+	Page *Page
+	// Header, when set, replaces Request.Header. A non-nil value with no
+	// HTML, file, or text suppresses the header. Nil inherits. A cover
+	// inherits neither header nor footer unless these fields are set.
+	Header *HeaderFooter
+	// Footer, when set, replaces Request.Footer. A non-nil empty value
+	// suppresses the footer. Nil inherits.
+	Footer *HeaderFooter
 }
 
 // FromURL returns an input that navigates to url.
@@ -172,6 +181,15 @@ type TOC struct {
 	Title string
 	// Depth limits the heading levels listed. 0 means 3.
 	Depth int
+	// Template is a Go html/template for the contents page. Empty uses
+	// DefaultTOCTemplate. The data value has Title and Entries. Each entry
+	// has Level, Title, Page, Href, and Indent (pixels). This is the
+	// replacement for wkhtmltopdf's XSLT stylesheet.
+	Template string
+	// Page, when set, is the page box of a separate contents document.
+	// A single HTML input shares the body page unless Page is set, in which
+	// case the contents are rendered on their own and merged in front.
+	Page *Page
 }
 
 // Wait is how long to let the page settle before capturing.
@@ -273,6 +291,22 @@ type Request struct {
 
 	// LoadErrors defaults to LoadErrorAbort.
 	LoadErrors LoadErrorPolicy
+	// Copies repeats the finished document in the output file. 0 and 1 write
+	// it once. This is wkhtmltopdf --copies: one file, not a printer queue.
+	Copies int
+	// Collate controls Copies. Nil means true: the whole document repeats.
+	// False repeats each page Copies times before the next page.
+	Collate *bool
+	// MinimumFontSize raises computed font sizes below this floor, in points.
+	// 0 leaves sizes alone. It is applied in the page before print, which is
+	// the stand-in for WebKit's minimum-font-size setting.
+	MinimumFontSize float64
+	// Tagged keeps Chromium's accessible structure tree. The default is off.
+	// Chrome writes a structure element for every marked node, and a large
+	// table becomes many times larger than the same untagged PDF. Outlines,
+	// link annotations, and extracted text do not need that tree. Set Tagged
+	// when a consumer needs PDF/UA structure.
+	Tagged bool
 }
 
 // ImageFormat is the encoding of a screenshot.
@@ -324,6 +358,9 @@ type ImageRequest struct {
 	Wait    Wait
 	Network Network
 	Inject  Inject
+	// MinimumFontSize raises computed font sizes below this floor, in points.
+	// 0 leaves sizes alone.
+	MinimumFontSize float64
 }
 
 func boolOr(p *bool, fallback bool) bool {

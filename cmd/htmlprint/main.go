@@ -9,7 +9,7 @@ package main
 import (
 	"os"
 
-	"github.com/tushar-singh-dev/printkit/internal/cli"
+	"github.com/tushar1210/printkit/internal/cli"
 )
 
 func main() {
