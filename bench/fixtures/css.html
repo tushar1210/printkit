@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CSS dashboard</title>
+<style>
+  @font-face {
+    font-family: "Bench Sans";
+    src: url("fonts/LiberationSans-Regular.ttf") format("truetype");
+    font-weight: 400;
+  }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Bench Sans", sans-serif;
+    color: #1c1917;
+    background: linear-gradient(160deg, #fff7ed 0%, #e0f2fe 55%, #fce7f3 100%);
+    min-height: 100vh;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 28px 36px;
+    background: rgba(255,255,255,0.8);
+  }
+  header h1 { margin: 0; font-size: 28px; letter-spacing: -0.03em; }
+  header .meta { font-size: 13px; color: #57534e; }
+  main {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 28px 36px 48px;
+  }
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 18px 18px 22px;
+    box-shadow: 0 10px 30px rgba(28, 25, 23, 0.08);
+  }
+  .card h2 { margin: 0 0 8px; font-size: 14px; color: #78716c; font-weight: 600; }
+  .card .n { font-size: 32px; font-weight: 700; }
+  .card:nth-child(1) { background: #ffedd5; }
+  .card:nth-child(2) { background: #dbeafe; }
+  .card:nth-child(3) { background: #dcfce7; }
+  .card:nth-child(4) { background: #fae8ff; }
+  .wide { grid-column: span 2; }
+  .row { display: flex; gap: 8px; margin-top: 12px; }
+  .pill {
+    flex: 1;
+    background: rgba(255,255,255,0.7);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 12px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>CSSMARK floor status</h1>
+  <div class="meta">FONTMARK Bench Sans · local file, no network</div>
+</header>
+<main>
+  <section class="card"><h2>Open orders</h2><div class="n">128</div><div class="row"><span class="pill">FLEXMARK pick</span><span class="pill">pack</span></div></section>
+  <section class="card"><h2>Short picks</h2><div class="n">7</div></section>
+  <section class="card"><h2>Dock doors</h2><div class="n">14</div></section>
+  <section class="card"><h2>On time</h2><div class="n">96%</div></section>
+  <section class="card wide"><h2>GRIDMARK aisle heat</h2><p>Four-column grid, rounded cards, a flex row of pills, a gradient page background, and a downloaded-from-disk face.</p></section>
+  <section class="card"><h2>Trailers</h2><div class="n">5</div></section>
+  <section class="card"><h2>Idle staff</h2><div class="n">3</div></section>
+  <section class="card wide"><h2>Notes</h2><p>Modern layout is the point of this fixture. A browser from 2015 will not paint the grid or the flex line the way Chromium does.</p></section>
+</main>
+</body>
+</html>

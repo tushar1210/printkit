@@ -1,0 +1,7 @@
+Liberation Sans Regular is included so the CSS fixture can load a
+font from disk. No network fetch is involved.
+
+Copyright (c) 2012 Red Hat, Inc. with Reserved Font Name Liberation.
+Digitized data copyright (c) 2010 Google Corporation.
+Licensed under the SIL Open Font License, Version 1.1.
+https://scripts.sil.org/OFL
