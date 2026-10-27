@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.2.0 - 2026-10-28
 
 - Default PDF is untagged. Chrome's structure tree was most of the warm time and the bytes of a large table (`printToPDF` about 2.0 s of 2.4 s, and 8,783,412 bytes before the tree was stripped). The outline is built from CSS page breaks and the printed content box, then written with pdfcpu. `Request.Tagged` / `--tagged-pdf` keeps Chrome's tree and its outline. Chrome's untagged `generateDocumentOutline` is not used: in Chrome 156 those destinations all point at the first page.
 - `WritePDF` and `SavePDF` stream `Page.printToPDF` (`ReturnAsStream` and `IO.read`) when the request needs no outline, metadata, page ranges, copies, header, footer, cover, or merge. A single input with the default outline still comes back as bytes, because the outline is applied after print. pdfcpu is skipped when the request needs none of those passes. A structure tree is copied out only if `/StructTreeRoot` is actually present.
