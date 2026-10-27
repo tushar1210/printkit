@@ -1,12 +1,15 @@
 package printkit
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
+	"io"
 	"strings"
+	"sync"
 	"time"
 
 	cdppage "github.com/chromedp/cdproto/page"
@@ -18,43 +21,73 @@ func (c *Converter) renderPDF(ctx context.Context, req Request) ([]byte, error) 
 	if err := validateRequest(req); err != nil {
 		return nil, err
 	}
-	var pieces [][]byte
-	var marks []pdfcpu.Bookmark
-	if req.Cover != nil {
-		coverReq := withInput(req, *req.Cover, true)
-		coverReq.TOC = nil
-		cover, err := c.renderSingle(ctx, *req.Cover, coverReq)
-		if err != nil {
-			if errors.Is(err, errSkipInput) {
-				return nil, ErrNoInput
-			}
-			return nil, err
-		}
-		pieces = append(pieces, cover.pdf)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	// The cover does not need the body. TOC page numbers do, so the contents
+	// stay after the body inside renderSingle / renderMany.
+	type pieceResult struct {
+		pdf   []byte
+		marks []pdfcpu.Bookmark
+		err   error
 	}
+	var coverCh chan pieceResult
+	if req.Cover != nil {
+		coverCh = make(chan pieceResult, 1)
+		go func() {
+			coverReq := withInput(req, *req.Cover, true)
+			coverReq.TOC = nil
+			cover, err := c.renderSingle(ctx, *req.Cover, coverReq)
+			if errors.Is(err, errSkipInput) {
+				err = ErrNoInput
+			}
+			coverCh <- pieceResult{pdf: cover.pdf, err: err}
+		}()
+	}
+	var body pieceResult
 	switch len(req.Inputs) {
 	case 0:
 	case 1:
-		body, err := c.renderSingle(ctx, req.Inputs[0], req)
-		if err != nil {
-			if errors.Is(err, errSkipInput) {
-				return nil, ErrNoInput
-			}
-			return nil, err
+		renderedBody, err := c.renderSingle(ctx, req.Inputs[0], req)
+		if errors.Is(err, errSkipInput) {
+			err = ErrNoInput
 		}
-		pieces = append(pieces, body.pdf)
-		marks = body.marks
+		body = pieceResult{pdf: renderedBody.pdf, marks: renderedBody.marks, err: err}
 	default:
-		body, err := c.renderMany(ctx, req)
-		if err != nil {
-			return nil, err
+		renderedBody, err := c.renderMany(ctx, req)
+		body = pieceResult{pdf: renderedBody.pdf, marks: renderedBody.marks, err: err}
+	}
+	if body.err != nil {
+		cancel()
+	}
+	var pieces [][]byte
+	var marks []pdfcpu.Bookmark
+	if coverCh != nil {
+		cr := <-coverCh
+		if body.err != nil {
+			if errors.Is(body.err, context.Canceled) && cr.err != nil && !errors.Is(cr.err, context.Canceled) {
+				return nil, cr.err
+			}
+			return nil, body.err
 		}
+		if cr.err != nil {
+			return nil, cr.err
+		}
+		pieces = append(pieces, cr.pdf)
+	} else if body.err != nil {
+		return nil, body.err
+	}
+	if body.pdf != nil {
 		pieces = append(pieces, body.pdf)
 		marks = body.marks
 	}
 	if len(pieces) == 0 {
 		return nil, ErrNoInput
 	}
+	if len(pieces) == 1 && !requestNeedsPost(req) {
+		return pieces[0], nil
+	}
+	stopPost := traceDone(c.cfg.trace, "post")
+	defer stopPost()
 	out, err := mergePDFs(pieces)
 	if err != nil {
 		return nil, err
@@ -328,24 +361,61 @@ func (c *Converter) renderMany(ctx context.Context, req Request) (rendered, erro
 		return c.renderManyMixed(ctx, req)
 	}
 	wantHeader := headerActive(req.Header) || headerActive(req.Footer)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	type slot struct {
+		pdf   []byte
+		marks []pdfcpu.Bookmark
+		n     int
+		err   error
+	}
+	slots := make([]slot, len(req.Inputs))
+	var wg sync.WaitGroup
+	for i, in := range req.Inputs {
+		wg.Add(1)
+		go func(i int, in Input) {
+			defer wg.Done()
+			part, err := c.renderPlain(ctx, in, req, plainOpts{reserveHeader: wantHeader})
+			if err != nil {
+				slots[i].err = err
+				if !errors.Is(err, errSkipInput) {
+					cancel()
+				}
+				return
+			}
+			n, err := pdfPageCount(part.pdf)
+			if err != nil {
+				slots[i].err = err
+				cancel()
+				return
+			}
+			slots[i] = slot{pdf: part.pdf, marks: part.marks, n: n}
+		}(i, in)
+	}
+	wg.Wait()
 	var parts [][]byte
 	var groups [][]pdfcpu.Bookmark
 	var counts []int
-	for _, in := range req.Inputs {
-		part, err := c.renderPlain(ctx, in, req, plainOpts{reserveHeader: wantHeader})
-		if errors.Is(err, errSkipInput) {
+	var first error
+	for _, s := range slots {
+		if s.err != nil {
+			if errors.Is(s.err, errSkipInput) {
+				continue
+			}
+			if first == nil || errors.Is(first, context.Canceled) {
+				first = s.err
+			}
 			continue
 		}
-		if err != nil {
-			return rendered{}, err
+		if s.pdf == nil {
+			continue
 		}
-		n, err := pdfPageCount(part.pdf)
-		if err != nil {
-			return rendered{}, err
-		}
-		parts = append(parts, part.pdf)
-		groups = append(groups, part.marks)
-		counts = append(counts, n)
+		parts = append(parts, s.pdf)
+		groups = append(groups, s.marks)
+		counts = append(counts, s.n)
+	}
+	if first != nil {
+		return rendered{}, first
 	}
 	if len(parts) == 0 {
 		return rendered{}, ErrNoInput
@@ -528,7 +598,7 @@ func (c *Converter) scaleFor(ctx context.Context, req Request, box pageBox) (flo
 	return fitScale(req.Page.Scale, width, box.contentWidthPx(), true), nil
 }
 
-func (c *Converter) printPDF(ctx context.Context, box pageBox, scale float64, req Request, info pageInfo, nativeHeader bool) ([]byte, error) {
+func pdfPrintOptions(box pageBox, scale float64, req Request, info pageInfo, nativeHeader bool) ([]chromedp.PDFOption, error) {
 	opts := []chromedp.PDFOption{
 		chromedp.PDFPaper(chromedp.PaperSize{Width: box.width, Height: box.height}),
 		chromedp.PDFMargins(box.marginTop, box.marginRight, box.marginBottom, box.marginLeft),
@@ -540,7 +610,12 @@ func (c *Converter) printPDF(ctx context.Context, box pageBox, scale float64, re
 	if req.Page.PreferCSSPageSize {
 		opts = append(opts, chromedp.PDFPreferCSSPageSize())
 	}
-	if req.Outline.enabled() {
+	// The tagged structure tree is most of the time and the bytes of a large
+	// table, so the default turns it off. Chrome 156 will embed /Outlines
+	// without that tree, but every destination then points at the first page.
+	// Tagged keeps Chrome's tree and its outline. Untagged builds the outline
+	// afterwards from CSS fragmentation and the printed content box.
+	if req.Tagged && req.Outline.enabled() {
 		on := true
 		opts = append(opts, func(p *cdppage.PrintToPDFParams) { p.GenerateDocumentOutline = &on })
 	} else if !req.Tagged {
@@ -574,22 +649,123 @@ func (c *Converter) printPDF(ctx context.Context, box pageBox, scale float64, re
 			opts = append(opts, chromedp.PDFHeaderTemplate(`<span></span>`))
 		}
 	}
-	buf, err := chromedp.Run(ctx, chromedp.PrintToPDF(opts...))
+	return opts, nil
+}
+
+func (c *Converter) printPDF(ctx context.Context, box pageBox, scale float64, req Request, info pageInfo, nativeHeader bool) ([]byte, error) {
+	opts, err := pdfPrintOptions(box, scale, req, info, nativeHeader)
 	if err != nil {
-		return nil, fmt.Errorf("printkit: print pdf: %w", err)
+		return nil, err
 	}
-	if len(buf) < 5 || string(buf[:5]) != "%PDF-" {
-		return nil, fmt.Errorf("printkit: chromium returned an empty pdf")
+	var buf bytes.Buffer
+	if err := c.writePrint(ctx, &buf, opts); err != nil {
+		return nil, err
 	}
-	// Chrome writes /Outlines only as part of a tagged PDF. Drop the structure
-	// tree afterwards so large tables stay small and bookmarks remain.
-	if req.Outline.enabled() && !req.Tagged {
-		buf, err = stripStructureTree(buf)
+	out := buf.Bytes()
+	if !req.Tagged && bytes.Contains(out, []byte("/StructTreeRoot")) {
+		stop := traceDone(c.cfg.trace, "strip")
+		out, err = stripStructureTree(out)
+		stop()
 		if err != nil {
 			return nil, err
 		}
 	}
-	return buf, nil
+	if req.Outline.enabled() && !req.Tagged {
+		stop := traceDone(c.cfg.trace, "outline")
+		marks, err := domBookmarks(ctx, box, scale, req.Outline.depth())
+		if err != nil {
+			stop()
+			return nil, err
+		}
+		if len(marks) > 0 {
+			out, err = setBookmarks(out, marks)
+			if err != nil {
+				stop()
+				return nil, err
+			}
+		}
+		stop()
+	}
+	return out, nil
+}
+
+// canDirectWrite reports whether the PDF can be streamed to the caller with
+// no pdfcpu pass and no second copy of the document.
+func canDirectWrite(req Request) bool {
+	// The outline is written from heading positions after the print, so the
+	// bytes have to come back before they can be streamed to the caller.
+	if req.Outline.enabled() {
+		return false
+	}
+	if requestNeedsPost(req) {
+		return false
+	}
+	if len(req.Inputs) != 1 || req.Cover != nil || req.TOC != nil {
+		return false
+	}
+	if headerActive(req.Header) || headerActive(req.Footer) {
+		return false
+	}
+	in := req.Inputs[0]
+	if headerActive(in.Header) || headerActive(in.Footer) {
+		return false
+	}
+	return true
+}
+
+// requestNeedsPost is true when merge, metadata, page ranges, copies, or an
+// outline adjustment still has to touch the PDF bytes after printing.
+func requestNeedsPost(req Request) bool {
+	if req.Cover != nil || len(req.Inputs) != 1 || req.TOC != nil {
+		return true
+	}
+	if strings.TrimSpace(req.PageRanges) != "" || req.Copies > 1 {
+		return true
+	}
+	if req.Metadata != (Metadata{}) {
+		return true
+	}
+	if !req.Outline.enabled() {
+		// An untagged print has no Chrome outline to clear. A tagged print
+		// may, and clearing it is a pdfcpu pass.
+		return req.Tagged
+	}
+	// Chrome's outline is the full heading tree. A depth limit is applied
+	// afterwards. The DOM fallback already honours depth, and filtering
+	// again is the same tree.
+	if req.Outline.Depth > 0 {
+		return true
+	}
+	return false
+}
+
+func (c *Converter) writePDFDirect(ctx context.Context, w io.Writer, req Request) error {
+	if err := validateRequest(req); err != nil {
+		return err
+	}
+	in := req.Inputs[0]
+	box, err := req.Page.box(false, false)
+	if err != nil {
+		return err
+	}
+	return c.withTab(ctx, req.Network.Proxy, func(tab context.Context) error {
+		tab, cancel := bound(tab, req.Wait.Timeout, req.Network.Timeout)
+		defer cancel()
+		info, cleanup, err := c.open(tab, navFor(in, req))
+		if err != nil {
+			return err
+		}
+		defer cleanup()
+		scale, err := c.scaleFor(tab, req, box)
+		if err != nil {
+			return err
+		}
+		opts, err := pdfPrintOptions(box, scale, req, info, false)
+		if err != nil {
+			return err
+		}
+		return c.writePrint(tab, w, opts)
+	})
 }
 
 func renderSide(h *HeaderFooter, data HeaderData, lineAtTop bool) (string, error) {
@@ -752,6 +928,9 @@ func needsStatic(h *HeaderFooter, offset int, continuous bool) (bool, error) {
 
 func applyOutline(pdf []byte, req Request, marks []pdfcpu.Bookmark) ([]byte, error) {
 	if !req.Outline.enabled() {
+		if !bytes.Contains(pdf, []byte("/Outlines")) {
+			return pdf, nil
+		}
 		return clearBookmarks(pdf)
 	}
 	if len(marks) == 0 {
@@ -1000,29 +1179,65 @@ func (c *Converter) renderManyMixed(ctx context.Context, req Request) (rendered,
 		box   pageBox
 		in    Input
 	}
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	slots := make([]part, len(req.Inputs))
+	errs := make([]error, len(req.Inputs))
+	var wg sync.WaitGroup
+	for i, in := range req.Inputs {
+		wg.Add(1)
+		go func(i int, in Input) {
+			defer wg.Done()
+			spec := withInput(req, in, false)
+			spec.TOC = nil
+			hasH := headerActive(spec.Header)
+			hasF := headerActive(spec.Footer)
+			box, err := spec.Page.box(hasH, hasF)
+			if err != nil {
+				errs[i] = err
+				cancel()
+				return
+			}
+			box = applySpacing(box, spec.Header, spec.Footer)
+			plain, err := c.renderPlain(ctx, in, spec, plainOpts{reserveHeader: hasH || hasF})
+			if errors.Is(err, errSkipInput) {
+				errs[i] = err
+				return
+			}
+			if err != nil {
+				errs[i] = err
+				cancel()
+				return
+			}
+			n, err := pdfPageCount(plain.pdf)
+			if err != nil {
+				errs[i] = err
+				cancel()
+				return
+			}
+			slots[i] = part{pdf: plain.pdf, marks: plain.marks, n: n, spec: spec, box: box, in: in}
+		}(i, in)
+	}
+	wg.Wait()
 	var parts []part
-	for _, in := range req.Inputs {
-		spec := withInput(req, in, false)
-		spec.TOC = nil
-		hasH := headerActive(spec.Header)
-		hasF := headerActive(spec.Footer)
-		box, err := spec.Page.box(hasH, hasF)
-		if err != nil {
-			return rendered{}, err
-		}
-		box = applySpacing(box, spec.Header, spec.Footer)
-		plain, err := c.renderPlain(ctx, in, spec, plainOpts{reserveHeader: hasH || hasF})
-		if errors.Is(err, errSkipInput) {
+	var first error
+	for i, s := range slots {
+		if errs[i] != nil {
+			if errors.Is(errs[i], errSkipInput) {
+				continue
+			}
+			if first == nil || errors.Is(first, context.Canceled) {
+				first = errs[i]
+			}
 			continue
 		}
-		if err != nil {
-			return rendered{}, err
+		if s.pdf == nil {
+			continue
 		}
-		n, err := pdfPageCount(plain.pdf)
-		if err != nil {
-			return rendered{}, err
-		}
-		parts = append(parts, part{pdf: plain.pdf, marks: plain.marks, n: n, spec: spec, box: box, in: in})
+		parts = append(parts, s)
+	}
+	if first != nil {
+		return rendered{}, first
 	}
 	if len(parts) == 0 {
 		return rendered{}, ErrNoInput

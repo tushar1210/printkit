@@ -18,6 +18,9 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"net"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -35,7 +38,7 @@ import (
 
 const wkhtmlBuild = "wkhtmltox 1:0.12.6.1-2.jammy amd64 from https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-2/wkhtmltox_0.12.6.1-2.jammy_amd64.deb (patched Qt). Ubuntu 24.04 has no official packaging build; jammy is the closest and the package links against libssl.so.3."
 
-const method = "Local fixtures only. Both CLIs run with backgrounds on and smart shrinking left at the CLI default (on). wkhtmltopdf is passed --enable-local-file-access. The report fixture adds a table of contents and a header/footer of [page]/[topage] and [doctitle], which both tools can paint with their native header path. Cold: one process per document. Warm: one printkit.Converter per fixture, pool size 1, timed around Converter.PDF after the browser is already up. Throughput: N processes, or one Converter with pool size N. CPU for a finished process is the greater of wait4 rusage and the high-water mark of user+sys ticks summed over the live process tree. rusage alone misses Chromium children that are not reaped into the parent. The live sum alone misses a few ticks that land in the parent as it exits, which is the whole cost of a short wkhtmltopdf run. Warm CPU is a delta of the live sum on the harness and includes a light RSS sampler. RSS sums VmRSS every 15ms and counts shared pages once per process. PSS sums smaps_rollup about every 120ms. Percentiles are nearest-rank, rank = ceil(p*n)-1."
+const method = "Local fixtures only. Both CLIs run with backgrounds on and smart shrinking left at the CLI default (on). wkhtmltopdf is passed --enable-local-file-access. The report fixture adds a table of contents and a header/footer of [page]/[topage] and [doctitle], which both tools can paint with their native header path. Cold: one process per document. Warm: one printkit.Converter per fixture, pool size 1, timed around Converter.PDF after the browser is already up. Throughput: N processes, or one Converter with pool size N. CPU for a finished process is the greater of wait4 rusage and the high-water mark of user+sys ticks summed over the live process tree. rusage alone misses Chromium children that are not reaped into the parent. The live sum alone misses a few ticks that land in the parent as it exits, which is the whole cost of a short wkhtmltopdf run. Warm CPU is a delta of the live sum on the harness and includes a light RSS sampler. RSS sums VmRSS every 15ms and counts shared pages once per process. PSS sums smaps_rollup about every 120ms. Percentiles are nearest-rank, rank = ceil(p*n)-1. Daemon: htmlprint serve on a unix socket with pool size 1; wall time is the client and RSS/PSS are the server process tree. FindChrome may select chrome-headless-shell."
 
 func main() {
 	htmlprint := flag.String("htmlprint", "bin/htmlprint", "htmlprint binary")
@@ -51,9 +54,21 @@ func main() {
 	timeout := flag.Duration("timeout", 180*time.Second, "budget for one cold or warm conversion")
 	skipCold := flag.Bool("skip-cold", false, "skip one-process-per-document runs")
 	skipWarm := flag.Bool("skip-warm", false, "skip the warm printkit Converter runs")
+	skipDaemon := flag.Bool("skip-daemon", false, "skip htmlprint serve daemon runs")
 	skipThroughput := flag.Bool("skip-throughput", false, "skip concurrency runs")
 	skipParity := flag.Bool("skip-parity", false, "skip the output parity pass")
+	stages := flag.Bool("stages", false, "print one warm per-stage trace for each fixture")
+	pprofAddr := flag.String("pprof", "", "listen address for net/http/pprof, for example 127.0.0.1:6060")
 	flag.Parse()
+	if *pprofAddr != "" {
+		go func() {
+			logf("pprof %s", *pprofAddr)
+			if err := http.ListenAndServe(*pprofAddr, nil); err != nil {
+				logf("pprof: %v", err)
+			}
+		}()
+	}
+	ensureSandbox()
 
 	if *runs < 1 || *batches < 1 || *warmup < 0 {
 		fatalf("runs and batches must be >= 1 and warmup must be >= 0")
@@ -134,6 +149,25 @@ func main() {
 			logf("warm printkit %s", fix.name)
 			s := measureWarm(fix, *warmup, *runs, *timeout)
 			rep.Warm = append(rep.Warm, s)
+			logSeries(s)
+			if err := writeReport(*jsonPath, rep); err != nil {
+				fatalf("%v", err)
+			}
+		}
+	}
+
+	if *stages {
+		for _, fix := range fixes {
+			logf("stages %s", fix.name)
+			measureStages(fix, *timeout)
+		}
+	}
+
+	if !*skipDaemon {
+		for _, fix := range fixes {
+			logf("daemon htmlprint %s", fix.name)
+			s := measureDaemon(htmlPath, fix, *outDir, *warmup, *runs, *timeout)
+			rep.Daemon = append(rep.Daemon, s)
 			logSeries(s)
 			if err := writeReport(*jsonPath, rep); err != nil {
 				fatalf("%v", err)
@@ -378,6 +412,179 @@ func measureWarm(fix fixture, warmup, runs int, timeout time.Duration) series {
 		samples = append(samples, sampleFrom(got))
 	}
 	return summarize("printkit", fix.name, samples, runErr)
+}
+
+func measureDaemon(htmlPath string, fix fixture, outDir string, warmup, runs int, timeout time.Duration) series {
+	sock := filepath.Join(os.TempDir(), fmt.Sprintf("printkit-bench-%d-%s.sock", os.Getpid(), fix.name))
+	_ = os.Remove(sock)
+	args := []string{"serve", "--socket", sock, "--pool", "1"}
+	if os.Getenv("PRINTKIT_NO_SANDBOX") == "1" || os.Geteuid() == 0 {
+		args = append(args, "--no-sandbox")
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	cmd := exec.CommandContext(ctx, htmlPath, args...)
+	configureCmd(cmd)
+	cmd.Env = append(os.Environ(), "PRINTKIT_SOCKET="+sock)
+	var stderr capped
+	stderr.max = 4096
+	cmd.Stdout = io.Discard
+	cmd.Stderr = &stderr
+	if err := cmd.Start(); err != nil {
+		return summarize("htmlprint-daemon", fix.name, nil, err)
+	}
+	defer func() {
+		cancel()
+		_ = cmd.Wait()
+		_ = os.Remove(sock)
+	}()
+	deadline := time.Now().Add(40 * time.Second)
+	up := false
+	for time.Now().Before(deadline) {
+		conn, err := net.Dial("unix", sock)
+		if err == nil {
+			_ = conn.Close()
+			up = true
+			break
+		}
+		if cmd.ProcessState != nil {
+			break
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	if !up {
+		return summarize("htmlprint-daemon", fix.name, nil, fmt.Errorf("daemon did not listen: %s", strings.TrimSpace(stderr.String())))
+	}
+	env := []string{"PRINTKIT_DAEMON=1", "PRINTKIT_SOCKET=" + sock}
+	var samples []sample
+	var runErr error
+	for i := 0; i < warmup+runs; i++ {
+		out := filepath.Join(outDir, fmt.Sprintf("daemon-%s-%d.pdf", fix.name, i))
+		runCtx, runCancel := context.WithTimeout(context.Background(), timeout)
+		got, err := timeDaemon(runCtx, htmlPath, append([]string{"--use-daemon"}, cliArgs("htmlprint", fix, out, timeout)...), out, env, cmd.Process.Pid)
+		runCancel()
+		_ = os.Remove(out)
+		if err != nil {
+			runErr = err
+			break
+		}
+		if i < warmup {
+			continue
+		}
+		samples = append(samples, sampleFrom(got))
+	}
+	return summarize("htmlprint-daemon", fix.name, samples, runErr)
+}
+
+func timeDaemon(ctx context.Context, bin string, args []string, outPath string, extraEnv []string, serverPID int) (obs, error) {
+	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
+		return obs{}, err
+	}
+	cpu0 := treeCPU(serverPID)
+	var ticks atomic.Uint32
+	stop := track(func() (uint64, uint64) {
+		rss, pss, _ := sampleTree(serverPID, ticks.Add(1)%8 == 1)
+		return rss, pss
+	})
+	cmd := exec.CommandContext(ctx, bin, args...)
+	configureCmd(cmd)
+	cmd.Env = append(os.Environ(), extraEnv...)
+	stderr := &capped{max: 4096}
+	cmd.Stdout = io.Discard
+	cmd.Stderr = stderr
+	start := time.Now()
+	err := cmd.Run()
+	wall := time.Since(start)
+	cpu1 := treeCPU(serverPID)
+	rss, pss := stop()
+	if err != nil {
+		msg := strings.TrimSpace(stderr.String())
+		if msg == "" {
+			return obs{}, fmt.Errorf("%s: %w", bin, err)
+		}
+		return obs{}, fmt.Errorf("%s: %w: %s", bin, err, msg)
+	}
+	st, err := os.Stat(outPath)
+	if err != nil {
+		return obs{}, err
+	}
+	if st.Size() == 0 {
+		return obs{}, fmt.Errorf("%s: empty output %s", bin, outPath)
+	}
+	cpu := cpu1 - cpu0
+	if cpu < 0 {
+		cpu = 0
+	}
+	return obs{wall: wall, cpu: cpu, rss: rss, pss: pss, size: st.Size()}, nil
+}
+
+func measureStages(fix fixture, timeout time.Duration) {
+	var mu sync.Mutex
+	var spans []printkit.Span
+	opts := []printkit.Option{
+		printkit.WithPoolSize(1),
+		printkit.WithDefaultTimeout(timeout),
+		printkit.WithTrace(func(name string, d time.Duration) {
+			mu.Lock()
+			spans = append(spans, printkit.Span{Name: name, Duration: d})
+			mu.Unlock()
+		}),
+	}
+	if os.Getenv("PRINTKIT_NO_SANDBOX") == "1" || os.Geteuid() == 0 {
+		opts = append(opts, printkit.WithNoSandbox(true))
+	}
+	conv, err := printkit.New(opts...)
+	if err != nil {
+		logf("  error: %v", err)
+		return
+	}
+	defer func() { _ = conv.Close() }()
+	req := libraryRequest(fix)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	if _, err := conv.PDF(ctx, req); err != nil {
+		cancel()
+		logf("  warmup error: %v", err)
+		return
+	}
+	cancel()
+	mu.Lock()
+	spans = nil
+	mu.Unlock()
+	ctx, cancel = context.WithTimeout(context.Background(), timeout)
+	start := time.Now()
+	pdf, err := conv.PDF(ctx, req)
+	wall := time.Since(start)
+	cancel()
+	if err != nil {
+		logf("  error: %v", err)
+		return
+	}
+	logf("  wall %s bytes %d", wall.Round(time.Millisecond), len(pdf))
+	mu.Lock()
+	defer mu.Unlock()
+	for _, s := range spans {
+		logf("  stage %s %s", s.Name, s.Duration.Round(time.Millisecond))
+	}
+}
+
+func ensureSandbox() {
+	if os.Getenv("PRINTKIT_NO_SANDBOX") != "" || os.Geteuid() == 0 {
+		return
+	}
+	conv, err := printkit.New(printkit.WithPoolSize(1), printkit.WithDefaultTimeout(20*time.Second))
+	if err != nil {
+		_ = os.Setenv("PRINTKIT_NO_SANDBOX", "1")
+		logf("sandbox probe failed to launch (%v); PRINTKIT_NO_SANDBOX=1", err)
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	_, err = conv.PDF(ctx, printkit.Request{Inputs: []printkit.Input{printkit.FromHTML("<p>ok</p>")}})
+	cancel()
+	_ = conv.Close()
+	if err != nil {
+		_ = os.Setenv("PRINTKIT_NO_SANDBOX", "1")
+		logf("sandbox probe failed (%v); PRINTKIT_NO_SANDBOX=1", err)
+	}
 }
 
 func timeWarm(conv *printkit.Converter, req printkit.Request, timeout time.Duration) (obs, error) {
@@ -790,6 +997,7 @@ type report struct {
 	Parity     []parityResult     `json:"parity"`
 	Cold       []series           `json:"cold"`
 	Warm       []series           `json:"warm"`
+	Daemon     []series           `json:"daemon"`
 	Throughput []throughputResult `json:"throughput"`
 }
 
@@ -1067,6 +1275,11 @@ func reportFailed(rep *report) bool {
 			return true
 		}
 	}
+	for _, s := range rep.Daemon {
+		if s.Error != "" {
+			return true
+		}
+	}
 	for _, s := range rep.Throughput {
 		if s.Error != "" {
 			return true
@@ -1092,6 +1305,10 @@ func printReport(rep *report) {
 	}
 	for _, s := range rep.Warm {
 		writef(tw, "warm\t%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			s.Fixture, s.Tool, s.N, fmtMS(s.WallP50Ms), fmtMS(s.WallP95Ms), fmtMS(s.CPUP50Ms), fmtBytes(s.RSSP50Bytes), fmtBytes(s.PSSP50Bytes), fmtBytes(uint64(s.SizeP50Bytes)), s.Error)
+	}
+	for _, s := range rep.Daemon {
+		writef(tw, "daemon\t%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 			s.Fixture, s.Tool, s.N, fmtMS(s.WallP50Ms), fmtMS(s.WallP95Ms), fmtMS(s.CPUP50Ms), fmtBytes(s.RSSP50Bytes), fmtBytes(s.PSSP50Bytes), fmtBytes(uint64(s.SizeP50Bytes)), s.Error)
 	}
 	writef(tw, "\nTHROUGHPUT\tfixture\ttool\tn\tbatch p50\tdocs/s p50\tdocs/s p95\tcpu/doc p50\trss p50\tpss p50\terr\n")

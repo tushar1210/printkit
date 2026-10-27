@@ -23,7 +23,10 @@ func FindChrome() (string, error) {
 		}
 		return "", optionf("ChromePath", "%s=%s does not point at a binary", env, v)
 	}
-	for _, candidate := range chromeCandidates() {
+	// chrome-headless-shell is the smaller headless binary shipped with Chrome.
+	// WithChromePath still wins, because New does not call FindChrome when it
+	// is set. A full Chrome is the fallback when the shell is not installed.
+	for _, candidate := range append(headlessShellCandidates(), chromeCandidates()...) {
 		if path, ok := existingBinary(candidate); ok {
 			return path, nil
 		}
@@ -47,6 +50,37 @@ func existingBinary(path string) (string, bool) {
 		return "", false
 	}
 	return found, true
+}
+
+func headlessShellCandidates() []string {
+	switch runtime.GOOS {
+	case "darwin":
+		return []string{
+			"/Applications/Google Chrome.app/Contents/MacOS/chrome-headless-shell",
+			"/Applications/Chromium.app/Contents/MacOS/chrome-headless-shell",
+			"chrome-headless-shell",
+		}
+	case "windows":
+		local := os.Getenv("LOCALAPPDATA")
+		prog := os.Getenv("PROGRAMFILES")
+		prog86 := os.Getenv("PROGRAMFILES(X86)")
+		return []string{
+			filepath.Join(prog, `Google\Chrome\Application\chrome-headless-shell.exe`),
+			filepath.Join(prog86, `Google\Chrome\Application\chrome-headless-shell.exe`),
+			filepath.Join(local, `Google\Chrome\Application\chrome-headless-shell.exe`),
+			"chrome-headless-shell",
+			"chrome-headless-shell.exe",
+		}
+	default:
+		return []string{
+			"chrome-headless-shell",
+			"/opt/google/chrome/chrome-headless-shell",
+			"/opt/google/chrome-unstable/chrome-headless-shell",
+			"/usr/lib/chromium/chrome-headless-shell",
+			"/usr/lib/chromium-browser/chrome-headless-shell",
+			"/usr/local/bin/chrome-headless-shell",
+		}
+	}
 }
 
 func chromeCandidates() []string {

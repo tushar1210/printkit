@@ -27,6 +27,10 @@ func Run(argv0 string, args []string, stdout, stderr io.Writer) int {
 	if stderr == nil {
 		stderr = io.Discard
 	}
+	if len(args) > 0 && args[0] == "serve" {
+		return serve(args[1:], stdout, stderr)
+	}
+	args, useDaemon := stripFlag(args, "--use-daemon")
 	cmd, err := Parse(argv0, args)
 	if err != nil {
 		writef(stderr, "htmlprint: %s\n", err)
@@ -47,6 +51,11 @@ func Run(argv0 string, args []string, stdout, stderr io.Writer) int {
 	if cmd.DumpTOC {
 		writef(stdout, "%s\n", printkit.DefaultTOCTemplate)
 		return 0
+	}
+	if useDaemon || envOn("PRINTKIT_DAEMON") {
+		if code, handled := renderViaDaemon(argv0, args, cmd, stdout, stderr); handled {
+			return code
+		}
 	}
 	ctx := context.Background()
 	conv, err := printkit.New(cmd.Options...)
@@ -173,6 +182,7 @@ var flagSpecs = map[string]flagSpec{
 	"user-style-sheet": {1, "pi"}, "run-script": {1, "pi"},
 	"viewport-size": {1, "p"},
 	"images":        {}, "no-images": {},
+	"block-remote":           {},
 	"disable-external-links": {}, "disable-internal-links": {},
 	"page-offset": {1, "p"}, "encoding": {1, "pi"},
 	"chrome-path": {1, "pi"}, "no-sandbox": {}, "sandbox": {},
@@ -310,6 +320,7 @@ type draft struct {
 	allow        []string
 	js           *bool
 	images       *bool
+	blockRemote  *bool
 	userCSS      string
 	script       string
 	encoding     string
@@ -403,6 +414,9 @@ func (d *draft) apply(name string, vals []string) error {
 	case "enable-javascript":
 		v := true
 		d.js = &v
+	case "block-remote":
+		v := true
+		d.blockRemote = &v
 	case "load-error-handling", "load-media-error-handling":
 		switch strings.ToLower(one) {
 		case "abort", "ignore", "skip":
@@ -672,6 +686,7 @@ func (d *draft) finish(output string, objs []placed) (Command, error) {
 		AllowPaths:      d.allow,
 		JavaScript:      d.js,
 		Images:          d.images,
+		BlockRemote:     d.blockRemote,
 		Timeout:         d.timeout,
 	}
 	inj := printkit.Inject{UserStyleSheet: d.userCSS, JavaScript: d.script}
@@ -962,9 +977,14 @@ func Help(mode string) string {
 
 const helpText = `htmlprint renders HTML to PDF or an image with headless Chromium.
 
+htmlprint serve keeps one Chromium process warm and answers later htmlprint
+invocations on a local unix socket (or --listen on a loopback port). Plain
+htmlprint talks to it only with --use-daemon or PRINTKIT_DAEMON=1.
+
 Usage:
   htmlprint [pdf] [options] [cover <file>] [toc] [page] <input>... <output>
   htmlprint image [options] <input> <output>
+  htmlprint serve [--socket path] [--listen 127.0.0.1:port] [--pool n]
 
 The default mode is pdf. A program name containing wkhtmltoimage selects image
 mode, so the binary can be installed as wkhtmltopdf or wkhtmltoimage. The
@@ -1048,6 +1068,7 @@ Shared options:
   --username <user> --password <pass>
   --proxy <url> --user-agent <string>
   --disable-javascript / --enable-javascript
+  --block-remote              Fail requests that are not the document or the local machine.
   --no-images / --images
   --disable-local-file-access  Reject local files and file:// URLs.
                               Access is allowed unless this is set, which differs
@@ -1059,6 +1080,10 @@ Shared options:
   --encoding utf-8            Any other encoding is rejected.
   --chrome-path <path>        Extension.
   --no-sandbox                Extension. Also implied when running as root.
+  --use-daemon                Use a running "htmlprint serve" process when the socket
+                              answers. PRINTKIT_DAEMON=1 does the same. A missing
+                              daemon falls back to a cold Chromium. A daemon that
+                              returns an error does not.
   --quiet
   --version
   --help

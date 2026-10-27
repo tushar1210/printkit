@@ -17,6 +17,7 @@ import (
 
 	cdptype "github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/emulation"
+	"github.com/chromedp/cdproto/fetch"
 	"github.com/chromedp/cdproto/network"
 	cdppage "github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
@@ -57,7 +58,9 @@ func (c *Converter) open(ctx context.Context, spec navSpec) (pageInfo, func(), e
 		cleanup()
 		return pageInfo{}, noop, err
 	}
+	stopNav := traceDone(c.cfg.trace, "navigate")
 	resp, err := chromedp.Run(ctx, chromedp.NavigateResponse(navURL))
+	stopNav()
 	if err != nil {
 		cleanup()
 		return pageInfo{}, noop, c.finishLoad(display, spec.load, err)
@@ -69,7 +72,10 @@ func (c *Converter) open(ctx context.Context, spec navSpec) (pageInfo, func(), e
 			return pageInfo{}, noop, handled
 		}
 	}
-	if err := settle(ctx, spec.wait); err != nil {
+	stopReady := traceDone(c.cfg.trace, "ready-wait")
+	err = settle(ctx, spec.wait)
+	stopReady()
+	if err != nil {
 		cleanup()
 		return pageInfo{}, noop, err
 	}
@@ -286,17 +292,17 @@ func prepareTarget(ctx context.Context, spec navSpec, rawURL string) error {
 			headers["Authorization"] = "Basic " + token
 		}
 	}
-	if len(headers) > 0 {
-		if _, err := chromedp.Call(ctx, network.SetExtraHTTPHeaders, network.SetExtraHTTPHeadersParams{
-			Headers: network.Headers(headers),
-		}); err != nil {
-			return fmt.Errorf("printkit: headers: %w", err)
-		}
+	// Always replace the map so a reused tab does not keep the previous job's headers.
+	if _, err := chromedp.Call(ctx, network.SetExtraHTTPHeaders, network.SetExtraHTTPHeadersParams{
+		Headers: network.Headers(headers),
+	}); err != nil {
+		return fmt.Errorf("printkit: headers: %w", err)
 	}
 	for _, cookie := range spec.network.Cookies {
 		if err := setCookie(ctx, cookie, rawURL); err != nil {
 			return err
 		}
+		discardTab(ctx)
 	}
 	if spec.network.UserAgent != "" {
 		if _, err := chromedp.Call(ctx, emulation.SetUserAgentOverride, emulation.SetUserAgentOverrideParams{
@@ -304,20 +310,26 @@ func prepareTarget(ctx context.Context, spec navSpec, rawURL string) error {
 		}); err != nil {
 			return fmt.Errorf("printkit: user agent: %w", err)
 		}
+		discardTab(ctx)
 	}
-	if !boolOr(spec.network.JavaScript, true) {
-		if _, err := chromedp.Call(ctx, emulation.SetScriptExecutionDisabled, emulation.SetScriptExecutionDisabledParams{Value: true}); err != nil {
-			return fmt.Errorf("printkit: disable javascript: %w", err)
-		}
+	disabled := !boolOr(spec.network.JavaScript, true)
+	if _, err := chromedp.Call(ctx, emulation.SetScriptExecutionDisabled, emulation.SetScriptExecutionDisabledParams{Value: disabled}); err != nil {
+		return fmt.Errorf("printkit: javascript: %w", err)
 	}
+	patterns := []*network.BlockPattern{}
 	if !boolOr(spec.network.Images, true) {
-		patterns := []*network.BlockPattern{}
 		for _, ext := range []string{"png", "jpg", "jpeg", "gif", "webp", "svg", "avif", "bmp", "ico"} {
 			patterns = append(patterns, &network.BlockPattern{URLPattern: "*://*/*." + ext, Block: true})
 		}
-		if _, err := chromedp.Call(ctx, network.SetBlockedURLs, network.SetBlockedURLsParams{URLPatterns: patterns}); err != nil {
-			return fmt.Errorf("printkit: block images: %w", err)
+	}
+	if _, err := chromedp.Call(ctx, network.SetBlockedURLs, network.SetBlockedURLsParams{URLPatterns: patterns}); err != nil {
+		return fmt.Errorf("printkit: block images: %w", err)
+	}
+	if boolOr(spec.network.BlockRemote, false) {
+		if err := blockRemote(ctx, rawURL); err != nil {
+			return err
 		}
+		discardTab(ctx)
 	}
 	media := string(spec.media)
 	if media == "" {
@@ -343,6 +355,9 @@ func prepareTarget(ctx context.Context, spec navSpec, rawURL string) error {
 		}); err != nil {
 			return fmt.Errorf("printkit: viewport: %w", err)
 		}
+		discardTab(ctx)
+	} else if _, err := chromedp.Call(ctx, emulation.ClearDeviceMetricsOverride, cdptype.Empty{}); err != nil {
+		return fmt.Errorf("printkit: viewport: %w", err)
 	}
 	if spec.transparent {
 		if err := setTransparentBackground(ctx); err != nil {
@@ -357,8 +372,79 @@ func prepareTarget(ctx context.Context, spec navSpec, rawURL string) error {
 		if err := addEarlyCSS(ctx, css); err != nil {
 			return err
 		}
+		discardTab(ctx)
 	}
 	return nil
+}
+
+// blockRemote fails requests whose host is not the document and not the local
+// machine. The listener continues allowed requests, including the document
+// itself. Calls are made from another goroutine so the target event loop is
+// not blocked.
+func blockRemote(ctx context.Context, docURL string) error {
+	allowed := allowedHosts(docURL)
+	// Events queues payloads until the loop reads them, including ones that
+	// arrive before the goroutine is scheduled. The subscription ends when
+	// the tab context is canceled.
+	events := chromedp.Events(ctx, fetch.RequestPaused)
+	go func() {
+		for ev, err := range events {
+			if err != nil {
+				return
+			}
+			go func() {
+				cctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 15*time.Second)
+				defer cancel()
+				raw := ""
+				if ev.Request != nil {
+					raw = ev.Request.URL
+				}
+				if hostAllowed(raw, allowed) {
+					_, _ = chromedp.Call(cctx, fetch.ContinueRequest, fetch.ContinueRequestParams{RequestID: ev.RequestID})
+					return
+				}
+				_, _ = chromedp.Call(cctx, fetch.FailRequest, fetch.FailRequestParams{
+					RequestID:   ev.RequestID,
+					ErrorReason: network.ErrorReasonBlockedByClient,
+				})
+			}()
+		}
+	}()
+	if _, err := chromedp.Call(ctx, fetch.Enable, fetch.EnableParams{
+		Patterns: []*fetch.RequestPattern{{URLPattern: "*"}},
+	}); err != nil {
+		return fmt.Errorf("printkit: block remote: %w", err)
+	}
+	return nil
+}
+
+func allowedHosts(docURL string) map[string]bool {
+	hosts := map[string]bool{
+		"localhost": true,
+		"127.0.0.1": true,
+		"::1":       true,
+	}
+	if u, err := url.Parse(docURL); err == nil {
+		if host := strings.ToLower(u.Hostname()); host != "" {
+			hosts[host] = true
+		}
+	}
+	return hosts
+}
+
+func hostAllowed(raw string, hosts map[string]bool) bool {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return false
+	}
+	switch strings.ToLower(u.Scheme) {
+	case "data", "blob", "about":
+		return true
+	case "http", "https", "ws", "wss":
+		return hosts[strings.ToLower(u.Hostname())]
+	default:
+		return false
+	}
 }
 
 func withUserInfo(rawURL string, net Network) string {
@@ -441,6 +527,21 @@ func addEarlyCSS(ctx context.Context, css string) error {
 }
 
 func settle(ctx context.Context, wait Wait) error {
+	switch wait.WaitUntil {
+	case WaitNone:
+	case WaitDOMContentLoaded:
+		if err := pollExpr(ctx, `document.readyState !== 'loading'`, pollTimeout(wait)); err != nil {
+			return fmt.Errorf("printkit: ready: %w", err)
+		}
+	case WaitNetworkIdle:
+	default:
+		// The zero value and WaitLoad both wait until the load event has
+		// settled. WaitNone skips this. There is no fixed delay unless
+		// Wait.Delay is set.
+		if err := pollExpr(ctx, `document.readyState === 'complete'`, pollTimeout(wait)); err != nil {
+			return fmt.Errorf("printkit: ready: %w", err)
+		}
+	}
 	idle := wait.NetworkIdle
 	if wait.WaitUntil == WaitNetworkIdle && idle <= 0 {
 		idle = 500 * time.Millisecond
@@ -496,8 +597,12 @@ func pollNetworkIdle(ctx context.Context, quiet, timeout time.Duration) error {
 		}
 		return document.readyState === 'complete';
 	})()`, ms)
+	return pollExpr(ctx, expr, timeout)
+}
+
+func pollExpr(ctx context.Context, expr string, timeout time.Duration) error {
 	_, err := chromedp.Run(ctx, chromedp.Poll[bool](expr,
-		chromedp.WithPollingInterval(50*time.Millisecond),
+		chromedp.WithPollingInterval(20*time.Millisecond),
 		chromedp.WithPollingTimeout(timeout),
 	))
 	return err
