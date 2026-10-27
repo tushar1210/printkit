@@ -98,6 +98,39 @@ func TestPDFTextPagesAndOutline(t *testing.T) {
 			t.Fatalf("outline missing %q: %v", want, titles)
 		}
 	}
+	pagesByTitle := bookmarkPages(t, pdf)
+	if pagesByTitle["Alpha Chapter"] != 1 || pagesByTitle["Beta Section"] != 2 || pagesByTitle["Gamma End"] != 3 {
+		t.Fatalf("outline pages = %#v", pagesByTitle)
+	}
+}
+
+func TestOutlineFollowsPageBreaks(t *testing.T) {
+	var b strings.Builder
+	b.WriteString(`<!doctype html><html><head><meta charset="utf-8"><style>
+		h1 { break-before: page; font-family: sans-serif; }
+		h1:first-of-type { break-before: auto; }
+		p { font-family: sans-serif; }
+		</style></head><body>`)
+	for i := 1; i <= 6; i++ {
+		fmt.Fprintf(&b, "<h1>Chapter %02d</h1><p>body %02d</p>", i, i)
+	}
+	b.WriteString(`</body></html>`)
+	pdf, err := conv.PDF(context.Background(), printkit.Request{
+		Inputs: []printkit.Input{printkit.FromHTML(b.String())},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := pages(t, pdf); n != 6 {
+		t.Fatalf("pages = %d", n)
+	}
+	got := bookmarkPages(t, pdf)
+	for i := 1; i <= 6; i++ {
+		title := fmt.Sprintf("Chapter %02d", i)
+		if got[title] != i {
+			t.Fatalf("outline pages = %#v", got)
+		}
+	}
 }
 
 func TestPDFPageSize(t *testing.T) {
@@ -660,15 +693,25 @@ func pageDim(t *testing.T, pdf []byte) (float64, float64) {
 
 func bookmarkTitles(t *testing.T, pdf []byte) map[string]bool {
 	t.Helper()
+	pages := bookmarkPages(t, pdf)
+	out := make(map[string]bool, len(pages))
+	for title := range pages {
+		out[title] = true
+	}
+	return out
+}
+
+func bookmarkPages(t *testing.T, pdf []byte) map[string]int {
+	t.Helper()
 	bms, err := api.Bookmarks(context.Background(), bytes.NewReader(pdf), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	out := map[string]bool{}
+	out := map[string]int{}
 	var walk func([]pdfcpu.Bookmark)
 	walk = func(in []pdfcpu.Bookmark) {
 		for _, b := range in {
-			out[b.Title] = true
+			out[b.Title] = b.PageFrom
 			walk(b.Kids)
 		}
 	}

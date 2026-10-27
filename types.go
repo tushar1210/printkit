@@ -40,6 +40,9 @@ const (
 	WaitLoad             WaitUntil = "load"
 	WaitDOMContentLoaded WaitUntil = "domcontentloaded"
 	WaitNetworkIdle      WaitUntil = "networkidle"
+	// WaitNone captures as soon as navigation returns. The zero WaitUntil
+	// waits for the load event instead.
+	WaitNone WaitUntil = "none"
 )
 
 // Input is one HTML document. Set exactly one of URL, File, HTML, or Reader.
@@ -232,6 +235,10 @@ type Network struct {
 	JavaScript *bool
 	// Images enables image requests. Nil means true.
 	Images *bool
+	// BlockRemote fails requests whose host is not the document and not the
+	// local machine. Set it for static HTML that must not contact the network.
+	// Nil means allow.
+	BlockRemote *bool
 	// Timeout bounds navigation. Zero does not add a deadline of its own.
 	Timeout time.Duration
 }

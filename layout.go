@@ -73,6 +73,10 @@ func (b pageBox) contentWidthPx() float64 {
 	return (b.width - b.marginLeft - b.marginRight) * 96
 }
 
+func (b pageBox) contentHeightPx() float64 {
+	return (b.height - b.marginTop - b.marginBottom) * 96
+}
+
 func clampScale(scale float64) float64 {
 	if scale == 0 {
 		scale = 1

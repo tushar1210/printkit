@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -24,15 +25,23 @@ type Converter struct {
 	assets *assetServer
 	logf   func(string, ...any)
 
-	mu     sync.Mutex
-	extra  map[string]*extraBrowser
-	once   sync.Once
-	closed bool
+	mu             sync.Mutex
+	extra          map[string]*extraBrowser
+	idle           []*tabHandle
+	active         int
+	tabsOpened     int
+	tabsRetired    int
+	restarts       int
+	restartPending bool
+	startErr       error
+	once           sync.Once
+	closed         bool
 }
 
 type extraBrowser struct {
 	ctx    context.Context
 	cancel context.CancelFunc
+	dir    string
 }
 
 // New starts Chromium and returns a converter. The first call discovers the
@@ -45,6 +54,9 @@ func New(opts ...Option) (*Converter, error) {
 	}
 	if !cfg.noSandboxSet && (os.Geteuid() == 0 || envTruthy("PRINTKIT_NO_SANDBOX")) {
 		cfg.noSandbox = true
+	}
+	if cfg.trace == nil && envTruthy("PRINTKIT_TRACE") {
+		cfg.trace = stderrTrace
 	}
 	path := cfg.chromePath
 	if !cfg.chromeSet || path == "" {
@@ -62,9 +74,21 @@ func New(opts ...Option) (*Converter, error) {
 	if err != nil {
 		return nil, err
 	}
+	if cfg.userDataDir == "" {
+		dir, err := os.MkdirTemp("", "printkit-*")
+		if err != nil {
+			_ = assets.close()
+			return nil, fmt.Errorf("printkit: profile: %w", err)
+		}
+		cfg.userDataDir = dir
+		cfg.profileOwned = true
+	}
 	root, cancel, err := launchBrowser(cfg, cfg.proxy)
 	if err != nil {
 		_ = assets.close()
+		if cfg.profileOwned {
+			_ = os.RemoveAll(cfg.userDataDir)
+		}
 		return nil, err
 	}
 	c := &Converter{
@@ -90,7 +114,42 @@ func launchBrowser(cfg config, proxy string) (context.Context, context.CancelFun
 		chromedp.ExecPath(cfg.chromePath),
 		chromedp.Flag("disable-dev-shm-usage", true),
 		chromedp.WindowSize(1280, 800),
+		// Several of these are also in chromedp's defaults. Setting them here
+		// keeps the lean set intact when a later Flag replaces one by name.
+		chromedp.Flag("disable-background-networking", true),
+		chromedp.Flag("disable-component-update", true),
+		chromedp.Flag("disable-domain-reliability", true),
+		chromedp.Flag("disable-sync", true),
+		chromedp.Flag("disable-default-apps", true),
+		chromedp.Flag("disable-extensions", true),
+		chromedp.Flag("disable-component-extensions-with-background-pages", true),
+		chromedp.Flag("disable-breakpad", true),
+		chromedp.Flag("disable-client-side-phishing-detection", true),
+		chromedp.Flag("disable-hang-monitor", true),
+		chromedp.Flag("disable-prompt-on-repost", true),
+		chromedp.Flag("disable-renderer-backgrounding", true),
+		chromedp.Flag("disable-ipc-flooding-protection", true),
+		chromedp.Flag("metrics-recording-only", true),
+		chromedp.Flag("safebrowsing-disable-auto-update", true),
+		chromedp.Flag("mute-audio", true),
+		chromedp.Flag("no-default-browser-check", true),
+		chromedp.Flag("disable-search-engine-choice-screen", true),
+		// Flag replaces by name, so this has to include chromedp's defaults.
+		chromedp.Flag("disable-features", "Translate,BlinkGenPropertyTrees,BackForwardCache,AcceptCHFrame,MediaRouter,OptimizationHints,IsolateSandboxedIframes,DialMediaRouteProvider"),
 	)
+	limit := cfg.poolSize
+	if cfg.rendererSet {
+		limit = cfg.rendererLimit
+	}
+	if limit > 0 {
+		opts = append(opts, chromedp.Flag("renderer-process-limit", strconv.Itoa(limit)))
+	}
+	if cfg.jsHeapMB > 0 {
+		opts = append(opts, chromedp.Flag("js-flags", fmt.Sprintf("--max-old-space-size=%d", cfg.jsHeapMB)))
+	}
+	if len(cfg.env) > 0 {
+		opts = append(opts, chromedp.Env(cfg.env...))
+	}
 	if cfg.noSandbox {
 		opts = append(opts, chromedp.NoSandbox)
 	}
@@ -117,15 +176,18 @@ func launchBrowser(cfg config, proxy string) (context.Context, context.CancelFun
 	// be the long-lived context. A child with a timeout would stop Chromium
 	// as soon as the deadline fired.
 	errCh := make(chan error, 1)
+	stopLaunch := traceDone(cfg.trace, "launch")
 	go func() { errCh <- chromedp.Do(ctx) }()
 	select {
 	case err := <-errCh:
+		stopLaunch()
 		if err != nil {
 			cancel()
 			allocCancel()
 			return nil, nil, fmt.Errorf("printkit: start chromium: %w", err)
 		}
 	case <-time.After(30 * time.Second):
+		stopLaunch()
 		cancel()
 		allocCancel()
 		return nil, nil, fmt.Errorf("printkit: start chromium: timed out")
@@ -156,12 +218,30 @@ func (c *Converter) Close() error {
 		c.mu.Lock()
 		c.closed = true
 		extra := c.extra
+		idle := c.idle
 		c.extra = nil
+		c.idle = nil
+		cancel := c.cancel
+		dir := ""
+		if c.cfg.profileOwned {
+			dir = c.cfg.userDataDir
+		}
 		c.mu.Unlock()
+		for _, h := range idle {
+			h.cancel()
+		}
 		for _, b := range extra {
 			b.cancel()
+			if b.dir != "" {
+				_ = os.RemoveAll(b.dir)
+			}
 		}
-		c.cancel()
+		if cancel != nil {
+			cancel()
+		}
+		if dir != "" {
+			_ = os.RemoveAll(dir)
+		}
 		err = c.assets.close()
 	})
 	return err
@@ -170,6 +250,9 @@ func (c *Converter) Close() error {
 func (c *Converter) ensureOpen() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	if c.startErr != nil {
+		return c.startErr
+	}
 	if c.closed {
 		return ErrClosed
 	}
@@ -191,52 +274,20 @@ func (c *Converter) browser(proxy string) (context.Context, error) {
 	if b, ok := c.extra[proxy]; ok {
 		return b.ctx, nil
 	}
+	dir, err := os.MkdirTemp("", "printkit-proxy-*")
+	if err != nil {
+		return nil, fmt.Errorf("printkit: profile: %w", err)
+	}
 	cfg := c.cfg
-	cfg.userDataDir = ""
+	cfg.userDataDir = dir
+	cfg.profileOwned = true
 	ctx, cancel, err := launchBrowser(cfg, proxy)
 	if err != nil {
+		_ = os.RemoveAll(dir)
 		return nil, err
 	}
-	c.extra[proxy] = &extraBrowser{ctx: ctx, cancel: cancel}
+	c.extra[proxy] = &extraBrowser{ctx: ctx, cancel: cancel, dir: dir}
 	return ctx, nil
-}
-
-// withTab runs fn on a fresh tab. The tab is closed when fn returns.
-// Concurrency is capped by the pool size.
-func (c *Converter) withTab(ctx context.Context, proxy string, fn func(context.Context) error) error {
-	if err := c.ensureOpen(); err != nil {
-		return err
-	}
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	parent, err := c.browser(proxy)
-	if err != nil {
-		return err
-	}
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case c.sem <- struct{}{}:
-		defer func() { <-c.sem }()
-	}
-	tab, cancelTab := chromedp.NewContext(parent)
-	defer cancelTab()
-	runCtx, stop := context.WithCancel(tab)
-	defer stop()
-	stopWatch := context.AfterFunc(ctx, func() {
-		stop()
-		cancelTab()
-	})
-	defer stopWatch()
-	if c.cfg.defaultTimeout > 0 {
-		if _, ok := ctx.Deadline(); !ok {
-			var cancelTimeout context.CancelFunc
-			runCtx, cancelTimeout = context.WithTimeout(runCtx, c.cfg.defaultTimeout)
-			defer cancelTimeout()
-		}
-	}
-	return fn(runCtx)
 }
 
 // PDF renders req to a PDF document.
@@ -249,15 +300,22 @@ func (c *Converter) PDF(ctx context.Context, req Request) ([]byte, error) {
 }
 
 // WritePDF renders req and writes the PDF to w.
+// A request that needs no merge, outline, metadata, or page-range pass streams
+// Page.printToPDF into w. Anything else is rendered fully, then written.
 func (c *Converter) WritePDF(ctx context.Context, w io.Writer, req Request) error {
 	if w == nil {
 		return optionf("writer", "writer is nil")
+	}
+	if canDirectWrite(req) {
+		return c.writePDFDirect(ctx, w, req)
 	}
 	data, err := c.renderPDF(ctx, req)
 	if err != nil {
 		return err
 	}
+	stopWrite := traceDone(c.cfg.trace, "write")
 	_, err = w.Write(data)
+	stopWrite()
 	if err != nil {
 		return fmt.Errorf("printkit: write pdf: %w", err)
 	}
@@ -266,11 +324,36 @@ func (c *Converter) WritePDF(ctx context.Context, w io.Writer, req Request) erro
 
 // SavePDF renders req and writes it to path, replacing any existing file.
 func (c *Converter) SavePDF(ctx context.Context, path string, req Request) error {
+	if canDirectWrite(req) {
+		tmp := path + ".printkit-tmp"
+		f, err := os.Create(tmp)
+		if err != nil {
+			return fmt.Errorf("printkit: write %s: %w", path, err)
+		}
+		werr := c.writePDFDirect(ctx, f, req)
+		cerr := f.Close()
+		if werr != nil {
+			_ = os.Remove(tmp)
+			return werr
+		}
+		if cerr != nil {
+			_ = os.Remove(tmp)
+			return fmt.Errorf("printkit: write %s: %w", path, cerr)
+		}
+		if err := os.Rename(tmp, path); err != nil {
+			_ = os.Remove(tmp)
+			return fmt.Errorf("printkit: write %s: %w", path, err)
+		}
+		return nil
+	}
 	data, err := c.renderPDF(ctx, req)
 	if err != nil {
 		return err
 	}
-	return writeFileAtomic(path, data)
+	stopWrite := traceDone(c.cfg.trace, "write")
+	err = writeFileAtomic(path, data)
+	stopWrite()
+	return err
 }
 
 // Image renders req to an encoded image.
